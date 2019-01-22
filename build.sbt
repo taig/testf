@@ -12,7 +12,7 @@ lazy val core = project
         "org.typelevel" %% "cats-core" % "1.5.0" ::
         "org.typelevel" %% "cats-effect" % "1.2.0" ::
         "org.typelevel" %% "kittens" % "1.2.0" ::
-        "com.github.mpilquist" %% "simulacrum" % "0.14.0" % "compile" ::
+        "com.github.mpilquist" %% "simulacrum" % "0.15.0" % "compile" ::
         "org.typelevel" %% "cats-laws" % "1.5.0" % "test" ::
         Nil,
     name := "testf-core",
