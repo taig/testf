@@ -24,7 +24,8 @@ test:
   image: $CONTAINER_IMAGE:$CI_BUILD_REF_NAME
   script:
     - sbt scalafmtTestAll
-    - sbt test
+    - sbt coverage test coverageReport
+    - sbt coverageAggregate
     - sbt publishLocal
 
 publish:

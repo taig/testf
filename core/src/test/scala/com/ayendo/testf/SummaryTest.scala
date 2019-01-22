@@ -98,12 +98,14 @@ object SummaryTest extends TestF {
       description = None
     )
 
-    showSummary(group,
-                """✗ s1 |+| s2 |+| error
+    showSummary(
+      group,
+      """✗ s1 |+| s2 |+| error
                   |  ✓ s1
                   |  ✓ s2
                   |  ✗ error
-                  |    reason""".stripMargin)
+                  |    reason""".stripMargin
+    )
   }
 
   val showNestedGroupWithDescriptionError: Test[Id] = {
