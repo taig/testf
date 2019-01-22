@@ -7,7 +7,7 @@ import org.scalacheck.util.Pretty
 import org.scalacheck.{Prop, Test => SCTest}
 import sourcecode.Name
 
-trait TestFScalaCheckDsl {
+trait TestFScalacheckDsl {
   def check(description: String,
             prop: Prop,
             parameters: Parameters): Test[Id] = {

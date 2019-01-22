@@ -1,10 +1,9 @@
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
-import sbtcrossproject.CrossType
 
-lazy val root = project
+lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
-  .aggregate(coreJVM, coreJS, scalacheckJVM, scalacheckJS)
+  .aggregate(coreJVM, coreJS, scalacheckJVM, scalacheckJS, lawsJVM, lawsJS)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -54,3 +53,20 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
 lazy val scalacheckJVM = scalacheck.jvm
 
 lazy val scalacheckJS = scalacheck.js
+
+lazy val laws = crossProject(JVMPlatform, JSPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .settings(myMavenRepoPublishSettings)
+  .settings(
+    libraryDependencies ++=
+      "org.typelevel" %%% "cats-laws" % "1.5.0" ::
+        Nil,
+    name := "testf-laws",
+    testFrameworks += new TestFramework(
+      s"${organization.value}.testf.runner.TestFFramework")
+  )
+  .dependsOn(scalacheck)
+
+lazy val lawsJVM = laws.jvm
+
+lazy val lawsJS = laws.js

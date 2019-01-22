@@ -1,3 +1,3 @@
 package com.ayendo.testf
 
-package object scalacheck extends TestFScalaCheckDsl
+package object scalacheck extends TestFScalacheckDsl
