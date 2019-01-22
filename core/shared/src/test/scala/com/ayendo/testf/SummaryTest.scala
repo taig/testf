@@ -101,10 +101,10 @@ object SummaryTest extends TestF {
     showSummary(
       group,
       """✗ s1 |+| s2 |+| error
-                  |  ✓ s1
-                  |  ✓ s2
-                  |  ✗ error
-                  |    reason""".stripMargin
+        |  ✓ s1
+        |  ✓ s2
+        |  ✗ error
+        |    reason""".stripMargin
     )
   }
 
@@ -134,6 +134,6 @@ object SummaryTest extends TestF {
     showGroupWithoutDescriptionError,
     showGroupWithDescriptionError,
     showNestedGroupWithoutDescriptionError,
-    showNestedGroupWithDescriptionError,
-  ).map(_.interpret)
+    showNestedGroupWithDescriptionError
+  )
 }

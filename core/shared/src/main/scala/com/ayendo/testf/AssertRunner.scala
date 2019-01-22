@@ -7,19 +7,19 @@ import cats.implicits._
 import simulacrum.typeclass
 
 @typeclass
-trait Interpreter[F[_]] {
-  def interpret(result: Test.Assert[F]): IO[Summary]
+trait AssertRunner[F[_]] {
+  def run(result: Test.Assert[F]): IO[Summary]
 }
 
-object Interpreter {
-  implicit val id: Interpreter[Id] = {
+object AssertRunner {
+  implicit val id: AssertRunner[Id] = {
     case Test.Assert(description, Result.Success) =>
       IO.pure(Summary.Success(description))
     case Test.Assert(description, Result.Error(message)) =>
       IO.pure(Summary.Error(description, message))
   }
 
-  implicit val io: Interpreter[IO] = {
+  implicit val io: AssertRunner[IO] = {
     case Test.Assert(description, result) =>
       result
         .map {
@@ -31,6 +31,6 @@ object Interpreter {
         }
   }
 
-  implicit val eval: Interpreter[Eval] =
-    _.mapK(FunctionK.lift(IO.eval)).interpret
+  implicit val eval: AssertRunner[Eval] =
+    _.mapK(FunctionK.lift(IO.eval)).run
 }

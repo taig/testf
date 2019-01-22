@@ -15,11 +15,11 @@ object AdditionTest extends TestF {
 
   override val suite: List[IO[Summary]] =
     List(
-      label("onePlusOneId", onePlusOne[Id]).interpret,
-      label("zeroPlusZeroId", zeroPlusZero[Id]).interpret,
-      label("zeroPlusZeroEval", onePlusOne[Eval]).interpret,
-      label("zeroPlusZeroEval", zeroPlusZero[Eval]).interpret,
-      label("zeroPlusZeroIO", onePlusOne[IO]).interpret,
-      label("zeroPlusZeroIO", zeroPlusZero[IO]).interpret,
+      label("onePlusOneId", onePlusOne[Id]),
+      label("zeroPlusZeroId", zeroPlusZero[Id]),
+      label("zeroPlusZeroEval", onePlusOne[Eval]),
+      label("zeroPlusZeroEval", zeroPlusZero[Eval]),
+      label("zeroPlusZeroIO", onePlusOne[IO]),
+      label("zeroPlusZeroIO", zeroPlusZero[IO])
     )
 }

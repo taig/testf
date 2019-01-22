@@ -23,8 +23,8 @@ object StringTest extends TestF {
     })
 
   override val suite: List[IO[Summary]] = List(
-    startsWith.interpret,
-    concatenate.interpret,
-    substring.interpret
+    startsWith.run,
+    concatenate.run,
+    substring.run
   )
 }

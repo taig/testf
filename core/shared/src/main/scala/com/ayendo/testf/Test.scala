@@ -12,21 +12,21 @@ sealed trait Test[F[_]] extends Product with Serializable {
     case Test.Label(description, test)    => Test.Label(description, test.mapK(f))
   }
 
-  def interpret(implicit interpreter: Interpreter[F]): IO[Summary] =
+  def run(implicit interpreter: AssertRunner[F]): IO[Summary] =
     this match {
-      case assert: Assert[F] => interpreter.interpret(assert)
+      case assert: Assert[F] => interpreter.run(assert)
       case Group(left, right) =>
-        (left.interpret, right.interpret).mapN { (left, right) =>
+        (left.run, right.run).mapN { (left, right) =>
           Summary.Group(left, right, description = None)
         }
       case Label(description, Assert(_, result)) =>
-        Assert(description, result).interpret
+        Assert(description, result).run
       case Label(description, Group(left, right)) =>
-        (left.interpret, right.interpret).mapN { (left, right) =>
+        (left.run, right.run).mapN { (left, right) =>
           Summary.Group(left, right, description = Some(description))
         }
       case Label(description, Label(_, test)) =>
-        Label(description, test).interpret
+        Label(description, test).run
     }
 }
 
@@ -39,4 +39,6 @@ object Test {
   case class Label[F[_]](description: String, test: Test[F]) extends Test[F]
 
   implicit def semigroup[F[_]]: Semigroup[Test[F]] = Group.apply
+
+  implicit def run[F[_]: AssertRunner](test: Test[F]): IO[Summary] = test.run
 }
