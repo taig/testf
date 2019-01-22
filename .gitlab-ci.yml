@@ -27,6 +27,10 @@ test:
     - sbt coverage test coverageReport
     - sbt coverageAggregate
     - sbt publishLocal
+  artifacts:
+    paths:
+      - /builds/ayendo/testf/target/scala-2.12/coverage-report/
+
 
 publish:
   stage: publish
