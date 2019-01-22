@@ -1,7 +1,7 @@
 lazy val root = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
-  .aggregate(core)
+  .aggregate(core, scalacheck)
 
 lazy val core = project
   .settings(myMavenRepoPublishSettings)
@@ -17,5 +17,17 @@ lazy val core = project
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
-      "com.ayendo.testf.runner.TestFFramework")
+      s"${organization.value}.testf.runner.TestFFramework")
   )
+
+lazy val scalacheck = project
+  .settings(myMavenRepoPublishSettings)
+  .settings(
+    libraryDependencies ++=
+      "org.scalacheck" %% "scalacheck" % "1.14.0" ::
+        Nil,
+    name := "testf-scalacheck",
+    testFrameworks += new TestFramework(
+      s"${organization.value}.testf.runner.TestFFramework")
+  )
+  .dependsOn(core)
