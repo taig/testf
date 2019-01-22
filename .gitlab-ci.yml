@@ -29,7 +29,7 @@ test:
     - sbt publishLocal
   artifacts:
     paths:
-      - /builds/ayendo/testf/target/scala-2.12/coverage-report/
+      - /builds/ayendo/testf/target/scala-2.12/
 
 
 publish:

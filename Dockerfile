@@ -12,7 +12,8 @@ ENV         JVM_OPTS "-Xms2G -Xmx4G -Xss2M"
 # Cache sbt
 RUN         mkdir -p \
               ./cache/project/ \
-              ./cache/src/main/scala/
+              ./cache/src/main/scala/ \
+              ./cache/src/test/scala/
 ADD         ./project/build.properties ./cache/project/
 RUN         cd ./cache/ && sbt -v exit
 
@@ -28,7 +29,8 @@ RUN         cd ./cache/ && sbt -v compile
 # Cache dependencies
 ADD         ./project ./cache/project/
 ADD         ./build.sbt ./cache/
-RUN         cd ./cache/ && sbt -v test:compile
+RUN         echo "class Test" > ./cache/src/test/scala/Test.scala
+RUN         cd ./cache/ && sbt -v coverage test coverageReport
 
 # Clean cache
 RUN         rm -r ./cache/
