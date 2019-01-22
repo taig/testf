@@ -23,10 +23,7 @@ test:
   stage: test
   image: $CONTAINER_IMAGE:$CI_BUILD_REF_NAME
   script:
-    - sbt scalafmtTestAll
-    - sbt coverage test coverageReport
-    - sbt coverageAggregate
-    - sbt publishLocal
+    - sbt scalafmtTestAll coverage test coverageReport coverageAggregate publishLocal
   artifacts:
     paths:
       - /builds/ayendo/testf/target/scala-2.12/

@@ -1,33 +1,56 @@
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import sbtcrossproject.CrossType
+
 lazy val root = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
-  .aggregate(core, scalacheck)
+  .aggregate(coreJVM, coreJS, scalacheckJVM, scalacheckJS)
 
-lazy val core = project
+lazy val core = crossProject(JVMPlatform, JSPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "com.lihaoyi" %% "sourcecode" % "0.1.5" ::
-        "org.scala-sbt" % "test-interface" % "1.0" ::
-        "org.typelevel" %% "cats-core" % "1.5.0" ::
-        "org.typelevel" %% "cats-effect" % "1.2.0" ::
-        "org.typelevel" %% "kittens" % "1.2.0" ::
-        "com.github.mpilquist" %% "simulacrum" % "0.15.0" % "compile" ::
-        "org.typelevel" %% "cats-laws" % "1.5.0" % "test" ::
+      "com.lihaoyi" %%% "sourcecode" % "0.1.5" ::
+        "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
+        "org.typelevel" %%% "cats-core" % "1.5.0" ::
+        "org.typelevel" %%% "cats-effect" % "1.2.0" ::
+        "org.typelevel" %%% "kittens" % "1.2.0" ::
+        "com.github.mpilquist" %%% "simulacrum" % "0.15.0" % "compile" ::
+        "org.typelevel" %%% "cats-laws" % "1.5.0" % "test" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestFFramework")
   )
+  .jvmSettings(
+    libraryDependencies ++=
+      "org.scala-sbt" % "test-interface" % "1.0" ::
+        Nil
+  )
+  .jsSettings(
+    libraryDependencies ++=
+      "org.scala-js" %% "scalajs-test-interface" % "0.6.26" ::
+        Nil
+  )
 
-lazy val scalacheck = project
+lazy val coreJVM = core.jvm
+
+lazy val coreJS = core.js
+
+lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.scalacheck" %% "scalacheck" % "1.14.0" ::
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" ::
         Nil,
     name := "testf-scalacheck",
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestFFramework")
   )
   .dependsOn(core)
+
+lazy val scalacheckJVM = scalacheck.jvm
+
+lazy val scalacheckJS = scalacheck.js

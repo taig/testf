@@ -1,7 +1,5 @@
 package com.ayendo.testf.runner
 
-import java.util.concurrent.Executors
-
 import cats.effect.{ContextShift, IO}
 import sbt.testing._
 
@@ -16,18 +14,17 @@ final class TestFFramework extends Framework {
   override def runner(args: Array[String],
                       remoteArgs: Array[String],
                       testClassLoader: ClassLoader): TestFRunner =
-    TestFRunner(args,
-                remoteArgs,
-                testClassLoader,
-                TestFFramework.Single,
-                TestFFramework.Async)
+    TestFRunner(args, remoteArgs, testClassLoader, TestFFramework.Async)
+
+  def slaveRunner(args: Array[String],
+                  remoteArgs: Array[String],
+                  testClassLoader: ClassLoader,
+                  send: String => Unit): Runner =
+    runner(args, remoteArgs, testClassLoader)
 }
 
 object TestFFramework {
   val Async: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
-  val Single: ContextShift[IO] = IO.contextShift(
-    ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 
   object ModuleFingerprint extends SubclassFingerprint {
     override val isModule = true

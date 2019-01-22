@@ -8,7 +8,6 @@ import sbt.testing._
 
 final class TestFTask(task: TaskDef,
                       classLoader: ClassLoader,
-                      single: ContextShift[IO],
                       async: ContextShift[IO])
     extends Task {
   override def tags(): Array[String] = Array.empty
@@ -18,16 +17,18 @@ final class TestFTask(task: TaskDef,
   override def execute(eventHandler: EventHandler,
                        loggers: Array[Logger]): Array[Task] = {
     TestFTask
-      .execute[IO](task,
-                   classLoader,
-                   eventHandler,
-                   loggers.toList,
-                   single,
-                   async)
+      .execute[IO](task, classLoader, eventHandler, loggers.toList, async)
       .unsafeRunSync()
 
     Array.empty
   }
+
+  def execute(eventHandler: EventHandler,
+              loggers: Array[Logger],
+              continuation: Array[Task] => Unit): Unit =
+    TestFTask
+      .execute[IO](task, classLoader, eventHandler, loggers.toList, async)
+      .unsafeRunAsync(_ => continuation(Array.empty))
 }
 
 object TestFTask {
@@ -35,7 +36,6 @@ object TestFTask {
                     classLoader: ClassLoader,
                     eventHandler: EventHandler,
                     loggers: List[Logger],
-                    single: ContextShift[IO],
                     async: ContextShift[IO])(implicit F: Async[F]): F[Unit] = {
     for {
       name <- F.delay(task.fullyQualifiedName())
@@ -45,7 +45,7 @@ object TestFTask {
         implicit val contextShift: ContextShift[IO] = async
         Async.liftIO(testF.suite.parSequence)
       }
-      _ <- Async.liftIO(single.shift *> log[IO](loggers, name, results))
+      _ <- log[F](loggers, name, results) // TODO lock
       events = results.map(result => TestFEvent(task, result))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()

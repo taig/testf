@@ -1,11 +1,11 @@
-FROM        openjdk:8u151-jdk-alpine3.7
+FROM        openjdk:8u191-jdk-alpine3.8
 
 RUN         apk update
-RUN         apk add --no-cache bash curl
+RUN         apk add --no-cache bash nodejs
 
 # Install sbt
 RUN         apk add --no-cache --virtual=build-dependencies
-RUN         curl -Ls https://git.io/sbt > /usr/local/bin/sbt && chmod 0755 /usr/local/bin/sbt
+RUN         wget -O /usr/local/bin/sbt https://git.io/sbt && chmod 0755 /usr/local/bin/sbt
 RUN         apk del build-dependencies
 ENV         JVM_OPTS "-Xms2G -Xmx4G -Xss2M"
 
