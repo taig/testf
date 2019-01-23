@@ -1,22 +1,21 @@
 package com.ayendo.testf
 
 import cats.Id
-import cats.effect.IO
 import cats.implicits._
 import com.ayendo.testf.internal.{Formatter, Text}
 import sourcecode.Name
 
 object SummaryTest extends TestF {
   def showSummary(summary: Summary, expected: String)(
-      implicit name: Name): Test[Id] =
+      implicit name: Name): Test =
     equal[Id, String](Formatter.summary(summary, color = false), expected)
 
-  val showError: Test[Id] =
+  val showError: Test =
     showSummary(Summary.Error("error", "reason"),
                 """✗ error
                   |  reason""".stripMargin)
 
-  val showFailure: Test[Id] = {
+  val showFailure: Test = {
     val exception = new Exception("exception")
 
     val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
@@ -28,10 +27,10 @@ object SummaryTest extends TestF {
     )
   }
 
-  val showSuccess: Test[Id] =
+  val showSuccess: Test =
     showSummary(Summary.Success("success"), "✓ success")
 
-  val showGroupWithoutDescriptionSuccess: Test[Id] = {
+  val showGroupWithoutDescriptionSuccess: Test = {
     val group: Summary = Summary.Group(
       Summary.Success("s1"),
       Summary.Success("s2"),
@@ -41,7 +40,7 @@ object SummaryTest extends TestF {
     showSummary(group, "✓ s1 |+| s2")
   }
 
-  val showGroupWithRepeatedDescriptionsSuccess: Test[Id] = {
+  val showGroupWithRepeatedDescriptionsSuccess: Test = {
     val group: Summary = Summary.Group(
       Summary.Success("s1"),
       Summary.Success("s1"),
@@ -51,7 +50,7 @@ object SummaryTest extends TestF {
     showSummary(group, "✓ s1")
   }
 
-  val showGroupWithDescriptionSuccess: Test[Id] = {
+  val showGroupWithDescriptionSuccess: Test = {
     val group: Summary = Summary.Group(
       Summary.Success("s1"),
       Summary.Success("s2"),
@@ -61,7 +60,7 @@ object SummaryTest extends TestF {
     showSummary(group, "✓ group")
   }
 
-  val showGroupWithoutDescriptionError: Test[Id] = {
+  val showGroupWithoutDescriptionError: Test = {
     val group: Summary = Summary.Group(
       Summary.Success("success"),
       Summary.Error("error", "reason"),
@@ -75,7 +74,7 @@ object SummaryTest extends TestF {
                   |    reason""".stripMargin)
   }
 
-  val showGroupWithDescriptionError: Test[Id] = {
+  val showGroupWithDescriptionError: Test = {
     val group: Summary = Summary.Group(
       Summary.Success("success"),
       Summary.Error("error", "reason"),
@@ -89,7 +88,7 @@ object SummaryTest extends TestF {
                   |    reason""".stripMargin)
   }
 
-  val showNestedGroupWithoutDescriptionError: Test[Id] = {
+  val showNestedGroupWithoutDescriptionError: Test = {
     val group: Summary = Summary.Group(
       Summary.Group(Summary.Success("s1"),
                     Summary.Success("s2"),
@@ -108,7 +107,7 @@ object SummaryTest extends TestF {
     )
   }
 
-  val showNestedGroupWithDescriptionError: Test[Id] = {
+  val showNestedGroupWithDescriptionError: Test = {
     val group: Summary = Summary.Group(
       Summary.Group(Summary.Success("s1"),
                     Summary.Success("s2"),
@@ -124,7 +123,7 @@ object SummaryTest extends TestF {
                   |    reason""".stripMargin)
   }
 
-  override val suite: List[IO[Summary]] = List(
+  override val suite: List[Test] = List(
     showError,
     showFailure,
     showSuccess,

@@ -46,7 +46,7 @@ object TestFTask {
       testF <- F.delay(module.asInstanceOf[TestF])
       results <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite.parSequence)
+        Async.liftIO(testF.suite.map(_.run).parSequence)
       }
       _ <- lock.take *> log[F](loggers, name, results) <* lock.put(true)
       events = results.map(result => TestFEvent(task, result))
