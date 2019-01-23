@@ -3,7 +3,7 @@ package com.ayendo.testf.laws
 import cats.Id
 import cats.kernel.Semigroup
 import com.ayendo.testf.scalacheck.check
-import com.ayendo.testf.{Test, label, succeed}
+import com.ayendo.testf.{label, succeed, Test}
 import org.typelevel.discipline.Laws
 
 trait TestFLawsDsl {

@@ -7,7 +7,6 @@ RUN         apk add --no-cache bash nodejs
 RUN         apk add --no-cache --virtual=build-dependencies
 RUN         wget -O /usr/local/bin/sbt https://git.io/sbt && chmod 0755 /usr/local/bin/sbt
 RUN         apk del build-dependencies
-ENV         JVM_OPTS "-Xms2G -Xmx4G -Xss2M"
 
 # Cache sbt
 RUN         mkdir -p \
