@@ -8,7 +8,9 @@ import sourcecode.Name
 object SummaryTest extends TestF {
   def showSummary(summary: Summary, expected: String)(
       implicit name: Name): Test =
-    equal[Id, String](Formatter.summary(summary, color = false), expected)
+    equal[Id, String](name.value,
+                      Formatter.summary(summary, color = false),
+                      expected)
 
   val showError: Test =
     showSummary(Summary.Error("error", "reason"),

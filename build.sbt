@@ -10,12 +10,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "com.lihaoyi" %%% "sourcecode" % "0.1.5" ::
-        "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
+      "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
         "org.typelevel" %%% "cats-core" % "1.5.0" ::
         "org.typelevel" %%% "cats-effect" % "1.2.0" ::
         "org.typelevel" %%% "kittens" % "1.2.0" ::
         "com.github.mpilquist" %%% "simulacrum" % "0.15.0" % "compile" ::
+        "com.lihaoyi" %%% "sourcecode" % "0.1.5" % "test" ::
         "org.typelevel" %%% "cats-laws" % "1.5.0" % "test" ::
         Nil,
     name := "testf-core",
