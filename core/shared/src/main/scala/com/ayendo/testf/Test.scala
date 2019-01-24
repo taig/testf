@@ -6,6 +6,8 @@ import cats.data.Validated
 import cats.effect.{Effect, IO}
 import cats.implicits._
 
+import scala.annotation.tailrec
+
 sealed trait Test[+A] extends Product with Serializable
 
 object Test {
@@ -72,13 +74,31 @@ object Test {
         case Success                  => Success
       }
 
-    override def tailRecM[A, B](a: A)(f: A => Test[Either[A, B]]): Test[B] = ???
+    @tailrec
+    override def tailRecM[A, B](a: A)(f: A => Test[Either[A, B]]): Test[B] =
+      f(a) match {
+        case Pure(Right(a))           => Pure(a)
+        case Pure(Left(b))            => tailRecM(b)(f)
+        case Label(_, Pure(Right(a))) => Pure(a)
+        case Label(_, Pure(Left(b)))  => tailRecM(b)(f)
+      }
 
     override def pure[A](x: A): Test[A] = Pure(x)
   }
 
-  implicit def semigroup[A]: Semigroup[Test[A]] = new Semigroup[Test[A]] {
-    override def combine(x: Test[A], y: Test[A]): Test[A] = Group(x, y)
+  implicit def semigroup[A]: Semigroup[Test[A]] = Group.apply
+
+  implicit def eq[A: Eq]: Eq[Test[A]] = new Eq[Test[A]] {
+    override def eqv(x: Test[A], y: Test[A]): Boolean = (x, y) match {
+      case (Pure(x), Pure(y)) => x === y
+      case (Label(_, x), y)   => eqv(x, y)
+      case (x, Label(_, y))   => eqv(x, y)
+      case (Group(Group(a, b), c), Group(x, Group(y, z))) =>
+        eqv(a, x) && eqv(b, y) && eqv(c, z)
+      case (Group(x, Group(y, z)), Group(Group(a, b), c)) =>
+        eqv(a, x) && eqv(b, y) && eqv(c, z)
+      case (Group(x1, x2), Group(y1, y2)) => eqv(x1, y1) && eqv(x2, y2)
+    }
   }
 
   implicit class TestOps[A](val test: Test[A]) extends AnyVal {
