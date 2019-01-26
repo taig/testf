@@ -21,6 +21,15 @@ sealed trait Summary extends Product with Serializable {
 }
 
 object Summary {
+  case class Error(description: String, message: String) extends Summary {
+    override val toStatus = Status.Error
+  }
+
+  case class Failure(description: String, throwable: Throwable)
+      extends Summary {
+    override val toStatus = Status.Failure
+  }
+
   case class Group(summaries: List[Summary], description: Option[String])
       extends Summary {
     override val toStatus = summaries.map(_.toStatus).foldLeft(Status.Success) {
@@ -35,30 +44,22 @@ object Summary {
     }
   }
 
-  sealed trait Row extends Summary {
-    def description: String
-  }
-
-  case class Error(description: String, message: String) extends Row {
-    override val toStatus = Status.Error
-  }
-
-  case class Failure(description: String, throwable: Throwable) extends Row {
-    override val toStatus = Status.Failure
-  }
-
-  object Failure {
-    implicit val eq: Eq[Failure] = (x, y) =>
-      x.description === y.description && x.throwable == y.throwable
-  }
-
-  case class Skip(description: String) extends Row {
+  case class Skip(description: String) extends Summary {
     override val toStatus = Status.Skipped
   }
 
-  case class Success(description: String) extends Row {
+  case class Success(description: String) extends Summary {
     override val toStatus = Status.Success
   }
 
-  implicit val eq: Eq[Summary] = derived.semi.eq[Summary]
+  implicit val eq: Eq[Summary] = new Eq[Summary] {
+    override def eqv(x: Summary, y: Summary): Boolean =
+      PartialFunction.cond((x, y)) {
+        case (Error(dx, mx), Error(dy, my))     => dx === dy && mx === my
+        case (Failure(dx, tx), Failure(dy, ty)) => dx === dy && tx == ty
+        case (Group(sx, dx), Group(sy, dy))     => sx === sy && dx === dy
+        case (Skip(x), Skip(y))                 => x === y
+        case (Success(x), Success(y))           => x === y
+      }
+  }
 }
