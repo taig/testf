@@ -11,7 +11,11 @@ object Formatter {
     case Summary.Failure(description, _)     => description
     case Summary.Group(_, Some(description)) => description
     case Summary.Group(summaries, None) =>
-      summaries.map(description).distinct.foldLeft("")(_ + " |+| " + _)
+      summaries.map(description).distinct match {
+        case Nil          => ""
+        case head :: Nil  => head
+        case head :: tail => tail.foldLeft(head)(_ + " |+| " + _)
+      }
     case Summary.Skip(description)    => description
     case Summary.Success(description) => description
   }
@@ -27,25 +31,12 @@ object Formatter {
     case Summary.Failure(description, throwable) =>
       failure(description, throwable, color)
     case Summary.Success(description) => success(description, color)
-    case group: Summary.Group if level === 0 =>
-      val description = this.description(group)
-
-      val title =
-        if (group.isSuccess) success(description, color)
-        else error(description, message = None, color)
-
-      if (expanded) {
-        val details =
-          group.summaries.map(summary(color, expanded, level + 1)).mkString(EOL)
-        Text.padLeft(title + EOL + details, level * 2)
-      } else title
-//    case group @ Summary.Group(_, _: Summary.Row, Some(description)) =>
-//      if (group.isSuccess) success(description, color)
-//      else error(description, message = None, color)
-//    case Summary.Group(left, right: Summary.Row, None) =>
-//      summary(color, expanded, level)(left) + EOL +
-//        summary(color, expanded, level)(right)
-    case _: Summary.Group => ???
+    case Summary.Group(summaries, None) if level === 0 =>
+      summaries.map(summary(color, expanded, level + 1)).mkString(EOL)
+    case Summary.Group(_, Some(description)) if level === 0 =>
+      success(description, color)
+    case Summary.Group(_, Some(description)) =>
+      success(description, color)
   }
 
   def error(description: String,

@@ -1,49 +1,60 @@
-//package com.ayendo.testf
-//
-//import cats.implicits._
-//import com.ayendo.testf.internal.{Formatter, Text}
-//import sourcecode.Name
-//
-//object SummaryTest extends TestF {
-//  def showSummary(summary: Summary)(implicit name: Name): Test[String] =
-//    Test(name.value, Formatter.summary(summary, color = false))
-//
-//  val showError: Assert =
-//    showSummary(Summary.Error("error", "reason")).equal("""✗ error
-//                                                          |  reason""".stripMargin)
-//
-//  val showFailure: Assert = {
-//    val exception = new Exception("exception")
-//
-//    val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
-//
-//    showSummary(Summary.Failure("failure", exception)).equal(s"""⚡failure
-//                                                                |$details""".stripMargin)
-//  }
-//
-//  val showSuccess: Assert =
-//    showSummary(Summary.Success("success")).equal("✓ success")
-//
-//  val showGroupWithoutDescriptionSuccess: Assert = {
-//    val group: Summary = Summary.Group(
-//      Summary.Success("s1"),
-//      Summary.Success("s2"),
-//      description = None
-//    )
-//
-//    showSummary(group).equal("✓ s1 |+| s2")
-//  }
-//
-//  val showGroupWithRepeatedDescriptionsSuccess: Assert = {
-//    val group: Summary = Summary.Group(
-//      Summary.Success("s1"),
-//      Summary.Success("s1"),
-//      description = None
-//    )
-//
-//    showSummary(group).equal("✓ s1")
-//  }
-//
+package com.ayendo.testf
+
+import cats.Id
+import cats.effect.IO
+import cats.implicits._
+import com.ayendo.testf.internal.{Formatter, Text}
+import sourcecode.Name
+
+object SummaryTest extends TestF {
+  def showSummary(summary: Summary)(implicit name: Name): Test[Id, String] =
+    Test(name.value, Formatter.summary(summary, color = false))
+
+  val showError: Assert[Id] =
+    showSummary(Summary.Error("error", "reason")).equal("""✗ error
+                                                          |  reason""".stripMargin)
+
+  val showFailure: Assert[Id] = {
+    val exception = new Exception("exception")
+
+    val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
+
+    showSummary(Summary.Failure("failure", exception)).equal(s"""⚡failure
+                                                                |$details""".stripMargin)
+  }
+
+  val showSuccess: Assert[Id] =
+    showSummary(Summary.Success("success")).equal("✓ success")
+
+  val showGroupRootWithoutDescriptionSuccess: Assert[Id] = {
+    val group: Summary = Summary.Group(
+      List(Summary.Success("s1"), Summary.Success("s2")),
+      description = None
+    )
+
+    showSummary(group).equal("""✓ s1
+                               |✓ s2""".stripMargin)
+  }
+
+  val showGroupRootWithDescriptionSuccess: Assert[Id] = {
+    val group: Summary = Summary.Group(
+      List(Summary.Success("s1"), Summary.Success("s2")),
+      description = Some("success")
+    )
+
+    showSummary(group).equal("✓ success")
+  }
+
+  val showGroupRootWithRepeatedDescriptionsSuccess: Assert[Id] = {
+    val group: Summary = Summary.Group(
+      List(Summary.Success("s1"), Summary.Success("s1")),
+      description = None
+    )
+
+    showSummary(group).equal("""✓ s1
+                               |✓ s1""".stripMargin)
+  }
+
 //  val showGroupWithDescriptionSuccess: Assert = {
 //    val group: Summary = Summary.Group(
 //      Summary.Success("s1"),
@@ -112,7 +123,7 @@
 //                  |  ✗ error
 //                  |    reason""".stripMargin)
 //  }
-//
+
 //  override val suite: List[Assert] = List(
 //    showError,
 //    showFailure,
@@ -125,4 +136,13 @@
 //    showNestedGroupWithoutDescriptionError,
 //    showNestedGroupWithDescriptionError
 //  )
-//}
+
+  override val suite: Assert[IO] =
+    (
+      showError |+|
+        showFailure |+|
+        showGroupRootWithoutDescriptionSuccess |+|
+        showGroupRootWithDescriptionSuccess |+|
+        showGroupRootWithRepeatedDescriptionsSuccess
+    ).liftIO
+}
