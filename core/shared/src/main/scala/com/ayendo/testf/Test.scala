@@ -1,165 +1,175 @@
 package com.ayendo.testf
 
 import cats._
-import cats.effect.implicits._
 import cats.data.Validated
-import cats.effect.{Effect, IO}
+import cats.effect.IO
 import cats.implicits._
 
-import scala.annotation.tailrec
+sealed trait Test[F[_], A] extends Product with Serializable {
+  def mapK[G[_]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] = this match {
+    case Test.Defer(test)              => Test.Defer(f(test.map(_.mapK(f))))
+    case error: Test.Error[F, A]       => error.asInstanceOf[Test.Error[G, A]]
+    case failure: Test.Failure[F, A]   => failure.asInstanceOf[Test.Failure[G, A]]
+    case Test.Group(tests)             => Test.Group(tests.map(_.mapK(f)))
+    case Test.Label(description, test) => Test.Label(description, test.mapK(f))
+    case pure: Test.Pure[F, A]         => pure.asInstanceOf[Test[G, A]]
+    case Test.Skip(test)               => Test.Skip(test.mapK(f))
+    case success: Test.Success[F, A]   => success.asInstanceOf[Test.Success[G, A]]
+  }
 
-sealed trait Test[+A] extends Product with Serializable
+  def liftIO(implicit F: Functor[F], L: LiftIO[F]): Test[IO, A] = mapK(L.lift)
+}
 
 object Test {
-  final case class Effectful[A](test: IO[Test[A]]) extends Test[A]
+  final case class Defer[F[_], A](test: F[Test[F, A]]) extends Test[F, A]
 
-  final case class Error(message: String) extends Test[Nothing]
+  final case class Error[F[_], A](message: String) extends Test[F, A]
 
-  final case class Failure(throwable: Throwable) extends Test[Nothing]
+  final case class Failure[F[_], A](throwable: Throwable) extends Test[F, A]
 
-  final case class Group[A](left: Test[A], right: Test[A]) extends Test[A]
+  final case class Group[F[_], A](tests: List[Test[F, A]]) extends Test[F, A]
 
-  final case class Label[A](description: String, test: Test[A]) extends Test[A]
+  final case class Label[F[_], A](description: String, test: Test[F, A])
+      extends Test[F, A]
 
-  final case class Pure[A](value: A) extends Test[A]
+  final case class Pure[F[_], A](value: A) extends Test[F, A]
 
-  final case class Skip[A](test: Test[A]) extends Test[A]
+  final case class Skip[F[_], A](test: Test[F, A]) extends Test[F, A]
 
-  final case object Success extends Test[Nothing]
+  final case class Success[F[_], A]() extends Test[F, A]
 
-  def apply[A](description: String, value: A): Test[A] =
+  def apply[F[_], A](description: String, value: A): Test[F, A] =
     pure(description, value)
 
-  def effect[F[_]: Effect, A](description: String, value: F[A]): Test[A] =
-    label(description, Effectful(value.toIO.map(Pure.apply)))
+  def defer[F[_]: Functor, A](description: String, value: F[A]): Test[F, A] =
+    label(description, Defer[F, A](value.map(Pure.apply)))
 
-  def label[A](description: String, test: Test[A]): Test[A] =
+  def label[F[_], A](description: String, test: Test[F, A]): Test[F, A] =
     Label(description, test)
 
-  def pure[A](description: String, value: A): Test[A] =
+  def pure[F[_], A](description: String, value: A): Test[F, A] =
     label(description, Pure(value))
 
-  def success(description: String): Test[Nothing] = label(description, Success)
+  def success[F[_], A](description: String): Test[F, A] =
+    label(description, Success())
 
-  def error(description: String, message: String): Test[Nothing] =
+  def error[F[_], A](description: String, message: String): Test[F, A] =
     label(description, Error(message))
 
-  def failure(description: String, throwable: Throwable): Test[Nothing] =
+  def failure[F[_], A](description: String, throwable: Throwable): Test[F, A] =
     label(description, Failure(throwable))
 
-  implicit val monad: Monad[Test] = new Monad[Test] {
-    override def flatMap[A, B](fa: Test[A])(f: A => Test[B]): Test[B] =
-      fa match {
-        case Effectful(test) =>
-          val result: IO[Test[B]] = test.flatMap {
-            case Effectful(test)  => test.map(flatMap(_)(f))
-            case error: Error     => IO.pure(error)
-            case failure: Failure => IO.pure(failure)
-            case Group(left, right) =>
-              IO.pure(Group(flatMap(left)(f), flatMap(right)(f)))
-            case Label(description, test) =>
-              IO.pure(Label(description, flatMap(test)(f)))
-            case Pure(value) => IO.pure(f(value))
-            case Skip(test)  => IO.pure(flatMap(test)(f))
-            case Success     => IO.pure(Success)
-          }
+  def skip[F[_], A](test: Test[F, A]): Test[F, A] = Skip(test)
 
-          Effectful(result)
-        case error: Error             => error
-        case failure: Failure         => failure
-        case Group(left, right)       => Group(flatMap(left)(f), flatMap(right)(f))
+  implicit def monad[F[_]: Functor]: Monad[Test[F, ?]] = new Monad[Test[F, ?]] {
+    override def pure[A](x: A): Test[F, A] = Pure(x)
+
+    override def flatMap[A, B](fa: Test[F, A])(f: A => Test[F, B]): Test[F, B] =
+      fa match {
+        case Defer(test)              => Defer(test.map(flatMap(_)(f)))
+        case error: Error[F, A]       => error.asInstanceOf[Error[F, B]]
+        case failure: Failure[F, A]   => failure.asInstanceOf[Failure[F, B]]
+        case Group(tests)             => Group(tests.map(flatMap(_)(f)))
         case Label(description, test) => Label(description, flatMap(test)(f))
         case Pure(value)              => f(value)
         case Skip(test)               => Skip(flatMap(test)(f))
-        case Success                  => Success
+        case success: Success[F, A]   => success.asInstanceOf[Success[F, B]]
       }
 
-    @tailrec
-    override def tailRecM[A, B](a: A)(f: A => Test[Either[A, B]]): Test[B] =
-      f(a) match {
-        case Pure(Right(a))           => Pure(a)
-        case Pure(Left(b))            => tailRecM(b)(f)
-        case Label(_, Pure(Right(a))) => Pure(a)
-        case Label(_, Pure(Left(b)))  => tailRecM(b)(f)
+    override def tailRecM[A, B](a: A)(
+        f: A => Test[F, Either[A, B]]): Test[F, B] = {
+      def go(test: Test[F, Either[A, B]]): Test[F, B] = test match {
+        case Defer(test)              => Defer(test.map(go))
+        case error: Error[F, _]       => error.asInstanceOf[Error[F, B]]
+        case failure: Failure[F, _]   => failure.asInstanceOf[Failure[F, B]]
+        case Group(tests)             => Group(tests.map(go))
+        case Label(description, test) => Label(description, go(test))
+        case Pure(Right(b))           => Pure(b)
+        case Pure(Left(a))            => go(f(a))
+        case Skip(test)               => Skip(go(test))
+        case success: Success[F, _]   => success.asInstanceOf[Success[F, B]]
       }
 
-    override def pure[A](x: A): Test[A] = Pure(x)
-  }
-
-  implicit def semigroup[A]: Semigroup[Test[A]] = Group.apply
-
-  implicit def eq[A: Eq]: Eq[Test[A]] = new Eq[Test[A]] {
-    override def eqv(x: Test[A], y: Test[A]): Boolean = (x, y) match {
-      case (Pure(x), Pure(y)) => x === y
-      case (Label(_, x), y)   => eqv(x, y)
-      case (x, Label(_, y))   => eqv(x, y)
-      case (Group(Group(a, b), c), Group(x, Group(y, z))) =>
-        eqv(a, x) && eqv(b, y) && eqv(c, z)
-      case (Group(x, Group(y, z)), Group(Group(a, b), c)) =>
-        eqv(a, x) && eqv(b, y) && eqv(c, z)
-      case (Group(x1, x2), Group(y1, y2)) => eqv(x1, y1) && eqv(x2, y2)
+      go(f(a))
     }
   }
 
-  implicit class TestOps[A](val test: Test[A]) extends AnyVal {
-    def equal(expected: A)(implicit eq: Eq[A]): Assert =
-      test.map { actual =>
-        actual === expected
-      }.isTrue
+  implicit def monadId: Monad[Test[Id, ?]] = monad[Id]
 
-    def notEqual(expected: A)(implicit eq: Eq[A]): Assert =
-      test.map { actual =>
-        actual =!= expected
-      }.isTrue
-
-    def equalF[F[_]: Effect](expected: F[A])(implicit eq: Eq[A]): Assert =
-      test.flatMap { actual =>
-        Effectful((actual.pure[F], expected).mapN(_ === _).toIO.map(Pure.apply))
-      }.isTrue
+  implicit def semigroup[F[_], A]: Semigroup[Test[F, A]] = {
+    case (Group(xs), Group(ys)) => Group(xs |+| ys)
+    case (Group(xs), y)         => Group(xs :+ y)
+    case (x, Group(ys))         => Group(x +: ys)
+    case (x, y)                 => Group(List(x, y))
   }
 
-  implicit class TestBooleanOps(val test: Test[Boolean]) extends AnyVal {
-    def isTrue: Assert = test.flatMap {
-      case true  => Success
-      case false => Error("false")
-    }
-
-    def isFalse: Assert = test.flatMap {
-      case false => Success
-      case true  => Error("true")
+  implicit def eq[A: Eq]: Eq[Test[Id, A]] = new Eq[Test[Id, A]] {
+    override def eqv(x: Test[Id, A], y: Test[Id, A]): Boolean = {
+      PartialFunction.cond((x, y)) {
+        case (Defer(x), Defer(y))         => eqv(x, y)
+        case (Error(m1), Error(m2))       => m1 === m2
+        case (Failure(t1), Failure(t2))   => t1 == t2
+        case (Group(xs), Group(ys))       => xs === ys
+        case (Label(dx, x), Label(dy, y)) => dx === dy && eqv(x, y)
+        case (Pure(x), Pure(y))           => x === y
+        case (Skip(x), Skip(y))           => eqv(x, y)
+        case (Success(), Success())       => true
+      }
     }
   }
 
-  implicit class TestValidatedOps[A, B](val test: Test[Validated[A, B]])
+  implicit def show[F[_], A: Show]: Show[Test[F, A]] = new Show[Test[F, A]] {
+    override def show(test: Test[F, A]): String = test match {
+      case Defer(test)              => s"Defer($test)"
+      case Error(message)           => s"Error($message)"
+      case Failure(throwable)       => s"Failure(${throwable.getMessage})"
+      case Group(tests)             => s"Group(${tests.map(show).mkString(", ")})"
+      case Label(description, test) => s"Label($description, ${show(test)})"
+      case Pure(value)              => show"Pure($value)"
+      case Skip(test)               => s"Skip(${show(test)})"
+      case Success()                => s"Success()"
+    }
+  }
+
+  implicit def testOps[F[_], A](test: Test[F, A]): TestOps[F, A] =
+    new TestOps(test)
+
+  implicit def testOpsBoolean[F[_]](test: Test[F, Boolean]): TestOpsBoolean[F] =
+    new TestOpsBoolean(test)
+
+  implicit def testOpsEither[F[_], A, B](
+      test: Test[F, Either[A, B]]): TestOpsEither[F, A, B] =
+    new TestOpsEither(test)
+
+  implicit def testOpsOption[F[_], A](
+      test: Test[F, Option[A]]): TestOpsOption[F, A] = new TestOpsOption(test)
+
+  implicit def testOpsValidated[F[_], A, B](
+      test: Test[F, Validated[A, B]]): TestOpsValidated[F, A, B] =
+    new TestOpsValidated(test)
+
+  implicit class TestOpsResult[F[_]](val test: Test[F, Assertion])
       extends AnyVal {
-    def isValid: Assert = test.flatMap { validated =>
-      if (validated.isValid) Success
-      else Error("invalid")
+    def run(implicit F: Monad[F]): F[Summary] = Test.run(None, test)
+  }
+
+  private def run[F[_]](description: Option[String], test: Test[F, Assertion])(
+      implicit F: Monad[F]): F[Summary] =
+    (description, test) match {
+      case (description, Defer(test)) => test.flatMap(run(description, _))
+      case (description, Error(message)) =>
+        F.pure(Summary.Error(description.getOrElse("error"), message))
+      case (description, Failure(throwable)) =>
+        F.pure(Summary.Failure(description.getOrElse("failure"), throwable))
+      case (description, Group(tests)) =>
+        tests.traverse(run(None, _)).map(Summary.Group(_, description))
+      case (d1, label: Label[F, Assertion]) =>
+        run(d1.orElse(Some(label.description)), label.test)
+      case (description, Pure(_)) =>
+        F.pure(Summary.Success(description.getOrElse("pure")))
+      case (description, Skip(test)) =>
+        F.pure(Summary.Skip(description.getOrElse("skip")))
+      case (description, Success()) =>
+        F.pure(Summary.Success(description.getOrElse("success")))
     }
-
-    def isInvalid: Assert = test.flatMap { validated =>
-      if (validated.isInvalid) Success
-      else Error("valid")
-    }
-  }
-
-  implicit class TestOpsResult(val test: Assert) extends AnyVal {
-    def run: IO[Summary] = Test.run(None, test)
-  }
-
-  private val run: (Option[String], Assert) => IO[Summary] = {
-    case (description, Effectful(test)) => test.flatMap(run(description, _))
-    case (description, Error(message)) =>
-      IO.pure(Summary.Error(description.getOrElse("error"), message))
-    case (description, Failure(throwable)) =>
-      IO.pure(Summary.Failure(description.getOrElse("failure"), throwable))
-    case (description, Group(left, right)) =>
-      (run(None, left), run(None, right)).mapN(Summary.Group(_, _, description))
-    case (d1, Label(d2, test)) => run(d1.orElse(Some(d2)), test)
-    case (description, Pure(_)) =>
-      IO.pure(Summary.Success(description.getOrElse("pure")))
-    case (_, Skip(_)) => ???
-    case (description, Success) =>
-      IO.pure(Summary.Success(description.getOrElse("success")))
-  }
 }

@@ -7,23 +7,23 @@ import sbt.testing.Status
 sealed trait Summary extends Product with Serializable {
   final def isSuccess: Boolean =
     PartialFunction.cond(this) {
-      case Summary.Success(_)     => true
-      case Summary.Group(a, b, _) => a.isSuccess && b.isSuccess
+      case Summary.Success(_)          => true
+      case Summary.Group(summaries, _) => summaries.forall(_.isSuccess)
     }
 
   final def isErrorOrFailure: Boolean =
     PartialFunction.cond(this) {
       case Summary.Error(_, _) | Summary.Failure(_, _) => true
-      case Summary.Group(a, b, _)                      => a.isErrorOrFailure || b.isErrorOrFailure
+      case Summary.Group(summaries, _)                 => summaries.exists(_.isErrorOrFailure)
     }
 
   def toStatus: Status
 }
 
 object Summary {
-  case class Group(left: Summary, right: Summary, description: Option[String])
+  case class Group(summaries: List[Summary], description: Option[String])
       extends Summary {
-    override val toStatus = (left.toStatus, right.toStatus) match {
+    override val toStatus = summaries.map(_.toStatus).foldLeft(Status.Success) {
       case (Status.Error, _)                => Status.Error
       case (_, Status.Error)                => Status.Error
       case (Status.Failure, _)              => Status.Failure
@@ -50,6 +50,10 @@ object Summary {
   object Failure {
     implicit val eq: Eq[Failure] = (x, y) =>
       x.description === y.description && x.throwable == y.throwable
+  }
+
+  case class Skip(description: String) extends Row {
+    override val toStatus = Status.Skipped
   }
 
   case class Success(description: String) extends Row {

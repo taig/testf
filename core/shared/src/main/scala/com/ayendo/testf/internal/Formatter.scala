@@ -2,20 +2,18 @@ package com.ayendo.testf.internal
 
 import cats.implicits._
 import com.ayendo.testf.Summary
-import com.ayendo.testf.Summary.{Error, Failure, Group, Success}
 
 import scala.compat.Platform.EOL
 
 object Formatter {
   val description: Summary => String = {
-    case Error(description, _)          => description
-    case Failure(description, _)        => description
-    case Group(_, _, Some(description)) => description
-    case Group(left, right, None) =>
-      val da = description(left)
-      val db = description(right)
-      if (da === db) da else s"$da |+| $db"
-    case Success(description) => description
+    case Summary.Error(description, _)       => description
+    case Summary.Failure(description, _)     => description
+    case Summary.Group(_, Some(description)) => description
+    case Summary.Group(summaries, None) =>
+      summaries.map(description).distinct.foldLeft("")(_ + " |+| " + _)
+    case Summary.Skip(description)    => description
+    case Summary.Success(description) => description
   }
 
   def summary(summary: Summary, color: Boolean): String =
@@ -37,17 +35,16 @@ object Formatter {
         else error(description, message = None, color)
 
       if (expanded) {
-        val left = summary(color, expanded, level + 1)(group.left)
-        val right = summary(color, expanded, level + 1)(group.right)
-        val details = Text.padLeft(left + EOL + right, 2)
+        val details =
+          group.summaries.map(summary(color, expanded, level + 1)).mkString(EOL)
         Text.padLeft(title + EOL + details, level * 2)
       } else title
-    case group @ Summary.Group(_, _: Summary.Row, Some(description)) =>
-      if (group.isSuccess) success(description, color)
-      else error(description, message = None, color)
-    case Summary.Group(left, right: Summary.Row, None) =>
-      summary(color, expanded, level)(left) + EOL +
-        summary(color, expanded, level)(right)
+//    case group @ Summary.Group(_, _: Summary.Row, Some(description)) =>
+//      if (group.isSuccess) success(description, color)
+//      else error(description, message = None, color)
+//    case Summary.Group(left, right: Summary.Row, None) =>
+//      summary(color, expanded, level)(left) + EOL +
+//        summary(color, expanded, level)(right)
     case _: Summary.Group => ???
   }
 

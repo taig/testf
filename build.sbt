@@ -60,6 +60,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(
     libraryDependencies ++=
       "org.typelevel" %%% "cats-laws" % "1.5.0" ::
+        "io.chrisdavenport" %%% "cats-scalacheck" % "0.1.0" % "test" ::
         Nil,
     name := "testf-laws",
     testFrameworks += new TestFramework(
