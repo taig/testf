@@ -21,22 +21,28 @@ object Formatter {
   }
 
   def summary(summary: Summary, color: Boolean): String =
-    this.summary(color, expanded = summary.isErrorOrFailure, level = 0)(summary)
+    this.summary(color, level = 0)(summary)
 
-  def summary(color: Boolean,
-              expanded: Boolean,
-              level: Int): Summary => String = {
+  def summary(color: Boolean, level: Int): Summary => String = {
     case Summary.Error(description, message) =>
       error(description, Some(message), color)
     case Summary.Failure(description, throwable) =>
       failure(description, throwable, color)
-    case Summary.Success(description) => success(description, color)
     case Summary.Group(summaries, None) if level === 0 =>
-      summaries.map(summary(color, expanded, level + 1)).mkString(EOL)
+      summaries.map(summary(color, level + 1)).mkString(EOL)
     case Summary.Group(_, Some(description)) if level === 0 =>
       success(description, color)
-    case Summary.Group(_, Some(description)) =>
-      success(description, color)
+    case group @ Summary.Group(summaries, description) =>
+      val title = description.getOrElse(Formatter.description(group))
+
+      if (group.isSuccess) success(title, color)
+      else {
+        val message = error(title, message = None, color)
+        val details = summaries.map(summary(color, level + 1)).mkString(EOL)
+        message + EOL + Text.padLeft(details, 2)
+      }
+    case Summary.Skip(description)    => skip(description, color)
+    case Summary.Success(description) => success(description, color)
   }
 
   def error(description: String,
@@ -54,6 +60,11 @@ object Formatter {
     val value = s"⚡$description" + EOL + Text.padLeft(error, 2)
 
     if (color) Text.colorize(value, Console.RED) else value
+  }
+
+  def skip(description: String, color: Boolean): String = {
+    val value = s"~ $description"
+    if (color) Text.colorize(value, Console.YELLOW) else value
   }
 
   def success(description: String, color: Boolean): String = {
