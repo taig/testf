@@ -60,10 +60,10 @@ object TestTest extends TestF {
 
   implicit def cogenId[A: Cogen]: Cogen[Test[Id, A]] = cogen[Id, A]
 
-  override val suite: List[Assert[IO]] = List(
-    Test.verify("EqLaws", EqTests[Test[Id, Int]].eqv),
-    Test.verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup),
-    Test.verify("MonadLaws",
-                MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String])
-  )
+  override val suite: Assert[IO] =
+    Test.verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
+      Test.verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
+      Test.verify(
+        "MonadLaws",
+        MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String]) liftIO
 }

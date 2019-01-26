@@ -44,24 +44,22 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      results <- {
+      result <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite.map(_.run).parSequence)
+        Async.liftIO(testF.suite.run)
       }
-      _ <- lock.take *> log[F](loggers, name, results) <* lock.put(true)
-      events = results.map(result => TestFEvent(task, result))
-      _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
+      _ <- lock.take *> log[F](loggers, name, result) <* lock.put(true)
+      event = TestFEvent(task, result)
+      _ <- F.delay(eventHandler.handle(event))
     } yield ()
   }
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      summaries: List[Summary]): F[Unit] =
+                      summary: Summary): F[Unit] =
     loggers.traverse_ { logger =>
+      val message = Formatter.summary(summary, logger.ansiCodesSupported())
       Logging.print[F](logger, name, Console.GREEN) *>
-        summaries.traverse_ { summary =>
-          val message = Formatter.summary(summary, logger.ansiCodesSupported())
-          Logging.print(logger, message, Console.GREEN)
-        }
+        Logging.print(logger, message, Console.GREEN)
     }
 }

@@ -1,6 +1,7 @@
 package com.ayendo.testf.scalacheck
 
 import cats.Id
+import cats.implicits._
 import cats.effect.IO
 import com.ayendo.testf._
 import org.scalacheck.{Gen, Prop}
@@ -25,6 +26,6 @@ object StringTest extends TestF {
         (a + b + c).substring(a.length, a.length + b.length) == b
     })
 
-  override val suite: List[Assert[IO]] =
-    List(startsWith, concatenate, substring)
+  override val suite: Assert[IO] =
+    startsWith |+| concatenate |+| substring liftIO
 }

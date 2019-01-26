@@ -9,5 +9,5 @@ object AdditionTest extends TestF {
 
   val zeroPlusZero: Assert[Id] = Test[Id, Int]("zeroPlusZero", 0 + 0).equal(0)
 
-  override val suite: List[Assert[IO]] = List(onePlusOne, zeroPlusZero)
+  override val suite: Assert[IO] = onePlusOne |+| zeroPlusZero liftIO
 }

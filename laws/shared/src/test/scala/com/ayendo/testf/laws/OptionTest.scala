@@ -6,7 +6,6 @@ import cats.laws.discipline.MonadTests
 import com.ayendo.testf._
 
 object OptionTest extends TestF {
-  override val suite: List[Assert[IO]] = List(
-    Test.verify("MonadLaws", MonadTests[Option].monad[Int, Int, String])
-  )
+  override val suite: Assert[IO] =
+    Test.verify("MonadLaws", MonadTests[Option].monad[Int, Int, String]).liftIO
 }
