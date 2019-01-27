@@ -36,71 +36,38 @@ object TestOpsTest extends TestF {
       "boolean",
       booleanFalseIsFalse |+| booleanTrueIsFalse |+| booleanFalseIsTrue |+| booleanTrueIsTrue)
 
-  val eitherLeft: Test[Id, Either[Int, Int]] =
-    Test.pure[Id, Either[Int, Int]]("eitherLeft", Left(3))
+  val monoidEmpty: Test[Id, Option[Int]] =
+    Test.pure[Id, Option[Int]]("monoidEmpty", None)
 
-  val eitherRight: Test[Id, Either[Int, Int]] =
-    Test.pure[Id, Either[Int, Int]]("eitherRight", Right(3))
+  val monoidDefined: Test[Id, Option[Int]] =
+    Test.pure[Id, Option[Int]]("monoidDefined", Some(3))
 
-  val eitherLeftIsLeft: Assert[Id] =
+  val monoidEmptyNonEmpty: Assert[Id] =
     Test
-      .pure[Id, Assert[Id]]("eitherLeftIsLeft", eitherLeft.isLeft)
-      .equal(Test.success("eitherLeft"))
+      .pure[Id, Assert[Id]]("monoidEmptyNonEmpty", monoidEmpty.nonEmpty)
+      .equal(Test.error("monoidEmpty", "empty None"))
 
-  val eitherLeftIsRight: Assert[Id] =
+  val monoidEmptyIsEmpty: Assert[Id] =
     Test
-      .pure[Id, Assert[Id]]("eitherLeftIsRight", eitherLeft.isRight)
-      .equal(Test.error("eitherLeft", "Either is Right(3)"))
+      .pure[Id, Assert[Id]]("monoidEmptyIsEmpty", monoidEmpty.isEmpty)
+      .equal(Test.success("monoidEmpty"))
 
-  val eitherRightIsRight: Assert[Id] =
+  val monoidDefinedNonEmpty: Assert[Id] =
     Test
-      .pure[Id, Assert[Id]]("eitherRightIsRight", eitherRight.isRight)
-      .equal(Test.success("eitherRight"))
+      .pure[Id, Assert[Id]]("monoidDefinedNonEmpty", monoidDefined.nonEmpty)
+      .equal(Test.success("monoidDefined"))
 
-  val eitherRightIsLeft: Assert[Id] =
+  val monoidDefinedIsEmpty: Assert[Id] =
     Test
-      .pure[Id, Assert[Id]]("eitherRightIsLeft", eitherRight.isLeft)
-      .equal(Test.error("eitherRight", "Either is Left(3)"))
+      .pure[Id, Assert[Id]]("monoidDefinedIsEmpty", monoidDefined.isEmpty)
+      .equal(Test.error("monoidDefined", "not empty Some(3)"))
 
-  val either: Assert[Id] = Test.label(
-    "either",
-    eitherRightIsLeft |+| eitherLeftIsRight |+| eitherRightIsRight |+| eitherLeftIsRight)
+  val monoid: Assert[Id] =
+    Test.label("option",
+               monoidEmptyNonEmpty |+|
+                 monoidEmptyIsEmpty |+|
+                 monoidDefinedNonEmpty |+|
+                 monoidDefinedIsEmpty)
 
-  val optionEmpty: Test[Id, Option[Int]] =
-    Test.pure[Id, Option[Int]]("optionEmpty", None)
-
-  val optionDefined: Test[Id, Option[Int]] =
-    Test.pure[Id, Option[Int]]("optionDefined", Some(3))
-
-  val optionEmptyIsDefined: Assert[Id] =
-    Test
-      .pure[Id, Assert[Id]]("optionEmptyIsDefined", optionEmpty.isDefined)
-      .equal(Test.error("optionEmpty", "Option is None"))
-
-  val optionEmptyIsEmpty: Assert[Id] =
-    Test
-      .pure[Id, Assert[Id]]("optionEmptyIsEmpty", optionEmpty.isEmpty)
-      .equal(Test.success("optionEmpty"))
-
-  val optionDefinedIsDefined: Assert[Id] =
-    Test
-      .pure[Id, Assert[Id]]("optionDefinedIsDefined", optionDefined.isDefined)
-      .equal(Test.success("optionDefined"))
-
-  val optionDefinedIsEmpty: Assert[Id] =
-    Test
-      .pure[Id, Assert[Id]]("optionDefinedIsEmpty", optionDefined.isEmpty)
-      .equal(Test.error("optionDefined", "Option is Some(3)"))
-
-  val option: Assert[Id] =
-    Test.label(
-      "option",
-      optionEmptyIsDefined |+| optionEmptyIsEmpty |+| optionDefinedIsDefined |+| optionDefinedIsEmpty)
-
-  override def suite: Assert[IO] =
-    (
-      boolean |+|
-        either |+|
-        option
-    ).liftIO
+  override val suite: Assert[IO] = (boolean |+| monoid).liftIO
 }

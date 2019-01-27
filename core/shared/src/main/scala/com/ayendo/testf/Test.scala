@@ -1,7 +1,6 @@
 package com.ayendo.testf
 
 import cats._
-import cats.data.Validated
 import cats.effect.IO
 import cats.implicits._
 
@@ -137,16 +136,8 @@ object Test {
   implicit def testOpsBoolean[F[_]](test: Test[F, Boolean]): TestOpsBoolean[F] =
     new TestOpsBoolean(test)
 
-  implicit def testOpsEither[F[_], A, B](
-      test: Test[F, Either[A, B]]): TestOpsEither[F, A, B] =
-    new TestOpsEither(test)
-
-  implicit def testOpsOption[F[_], A](
-      test: Test[F, Option[A]]): TestOpsOption[F, A] = new TestOpsOption(test)
-
-  implicit def testOpsValidated[F[_], A, B](
-      test: Test[F, Validated[A, B]]): TestOpsValidated[F, A, B] =
-    new TestOpsValidated(test)
+  implicit def testOpsMonoid[F[_], A](test: Test[F, A]): TestOpsMonoid[F, A] =
+    new TestOpsMonoid[F, A](test)
 
   implicit class TestOpsResult[F[_]](val test: Test[F, Assertion])
       extends AnyVal {
