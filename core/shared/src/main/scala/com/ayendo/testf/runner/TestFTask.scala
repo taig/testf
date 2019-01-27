@@ -1,10 +1,10 @@
 package com.ayendo.testf.runner
 
-import cats.effect.concurrent.MVar
 import cats.effect._
+import cats.effect.concurrent.MVar
 import cats.implicits._
-import com.ayendo.testf.internal._
 import com.ayendo.testf._
+import com.ayendo.testf.internal._
 import sbt.testing._
 
 final class TestFTask(task: TaskDef,
@@ -48,7 +48,9 @@ object TestFTask {
         implicit val contextShift: ContextShift[IO] = async
         Async.liftIO(testF.suite.run)
       }
-      _ <- lock.take *> log[F](loggers, name, result) <* lock.put(true)
+      _ <- lock.take
+      _ <- log[F](loggers, name, result)
+      _ <- lock.put(true)
       event = TestFEvent(task, result)
       _ <- F.delay(eventHandler.handle(event))
     } yield ()
