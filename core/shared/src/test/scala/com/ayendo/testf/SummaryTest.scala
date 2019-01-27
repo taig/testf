@@ -117,6 +117,32 @@ object SummaryTest extends TestF {
                   |    reason""".stripMargin)
   }
 
+  val showGroupDeeplyNestedError: Assert[Id] = {
+    val group: Summary = Summary.Group(
+      List(
+        Summary.Group(
+          List(
+            Summary.Group(List(Summary.Success("s1"), Summary.Success("s2")),
+                          description = None),
+            Summary.Group(List(Summary.Error("error", "reason"),
+                               Summary.Success("s3")),
+                          description = None)
+          ),
+          description = None
+        )),
+      description = None
+    )
+
+    showSummary(group).equal(
+      """✗ s1 |+| s2 |+| error |+| s3
+        |  ✓ s1 |+| s2
+        |  ✗ error |+| s3
+        |    ✗ error
+        |      reason
+        |    ✓ s3""".stripMargin
+    )
+  }
+
   val showGroupDeeplyNestedWithoutDescriptionError: Assert[Id] = {
     val group: Summary = Summary.Group(
       List(
@@ -175,6 +201,7 @@ object SummaryTest extends TestF {
         showGroupNestedWithoutDescriptionSuccess |+|
         showGroupNestedWithoutDescriptionError |+|
         showGroupNestedWithDescriptionError |+|
+        showGroupDeeplyNestedError |+|
         showGroupDeeplyNestedWithoutDescriptionError |+|
         showGroupDeeplyNestedWithDescriptionError
     ).liftIO
