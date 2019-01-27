@@ -1,6 +1,6 @@
 package com.ayendo.testf
 
-import cats.Functor
+import cats.{Functor, Id}
 import cats.implicits._
 import com.ayendo.testf.Test.{
   Error,
@@ -34,4 +34,7 @@ trait TestBuilders {
   def skip[F[_], A](test: Test[F, A]): Test[F, A] = Skip(test)
 
   def suspend[F[_]: Functor, A](test: F[Test[F, A]]): Test[F, A] = Suspend(test)
+
+  def value[A](description: String, value: A): Test[Id, A] =
+    pure(description, value)
 }
