@@ -5,12 +5,11 @@ import cats.implicits._
 import cats.effect.IO
 
 object LiftIOTest extends TestF {
-  val id: Assert[Id] = Test.pure[Id, Int]("id", 3).notEqual(0)
+  val id: Assert[Id] = pure[Id, Int]("id", 3).notEqual(0)
 
-  val eval: Assert[Eval] =
-    Test.effect("eval", Eval.later(1 + 1)).equalF(Eval.now(2))
+  val eval: Assert[Eval] = defer("eval", Eval.later(1 + 1)).equalF(Eval.now(2))
 
-  val io: Assert[IO] = Test.effect("io", IO(1 + 1)).notEqualF(IO.pure(0))
+  val io: Assert[IO] = defer("io", IO(1 + 1)).notEqualF(IO.pure(0))
 
   override val suite: Assert[IO] = id.liftIO |+| eval.liftIO |+| io
 }

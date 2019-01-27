@@ -7,5 +7,5 @@ import com.ayendo.testf._
 
 object OptionTest extends TestF {
   override val suite: Assert[IO] =
-    Test.verify("MonadLaws", MonadTests[Option].monad[Int, Int, String]).liftIO
+    verify("MonadLaws", MonadTests[Option].monad[Int, Int, String]).liftIO
 }

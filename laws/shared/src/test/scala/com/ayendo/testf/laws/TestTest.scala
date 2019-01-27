@@ -11,9 +11,10 @@ object TestTest extends TestF {
   import Generators._
 
   override val suite: Assert[IO] =
-    Test.verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
-      Test.verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
-      Test.verify(
-        "MonadLaws",
-        MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String]) liftIO
+    (
+      verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
+        verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
+        verify("MonadLaws",
+               MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String])
+    ).liftIO
 }

@@ -1,5 +1,5 @@
 package com.ayendo
 
-package object testf {
+package object testf extends TestBuilders {
   type Assert[F[_]] = Test[F, Assertion]
 }

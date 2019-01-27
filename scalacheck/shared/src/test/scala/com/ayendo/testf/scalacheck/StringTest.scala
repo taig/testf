@@ -8,18 +8,18 @@ import org.scalacheck.{Gen, Prop}
 
 object StringTest extends TestF {
   val startsWith: Assert[Id] =
-    Test.check("startsWith", Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr) {
+    check("startsWith", Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr) {
       (a, b) =>
         (a + b) startsWith a
     })
 
   val concatenate: Assert[Id] =
-    Test.check("concatenate", Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr) {
+    check("concatenate", Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr) {
       (a, b) =>
         (a + b).length >= a.length && (a + b).length >= b.length
     })
 
-  val substring: Assert[Id] = Test.check(
+  val substring: Assert[Id] = check(
     "substring",
     Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr, Gen.alphaNumStr) {
       (a, b, c) =>
@@ -27,5 +27,5 @@ object StringTest extends TestF {
     })
 
   override val suite: Assert[IO] =
-    startsWith |+| concatenate |+| substring liftIO
+    (startsWith |+| concatenate |+| substring).liftIO
 }

@@ -2,7 +2,7 @@ package com.ayendo.testf.laws
 
 import cats._
 import cats.implicits._
-import com.ayendo.testf.{Assertion, Summary, Test}
+import com.ayendo.testf._
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
@@ -45,25 +45,32 @@ object Generators {
 
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
-    val defer =
-      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(Test.effect[F, A]))
+    val genError = (description, summon[String]).mapN(error[F, A])
 
-    val error = (description, summon[String]).mapN(Test.error[F, A])
+    val genFailure = (description, summon[Throwable]).mapN(failure[F, A])
 
-    val failure = (description, summon[Throwable]).mapN(Test.failure[F, A])
+    val genGroup =
+      Gen.lzy((summon[Test[F, A]], summon[Test[F, A]]).mapN(_ |+| _))
 
-    val group = Gen.lzy((summon[Test[F, A]], summon[Test[F, A]]).mapN(_ |+| _))
+    val genLabel = Gen.lzy((description, summon[Test[F, A]]).mapN(label))
 
-    val label = Gen.lzy((description, summon[Test[F, A]]).mapN(Test.label))
+    val genPure = (description, summon[A]).mapN(pure[F, A])
 
-    val pure = (description, summon[A]).mapN(Test.pure[F, A])
+    val genSkip = Gen.lzy(summon[Test[F, A]].map(skip))
 
-    val skip = Gen.lzy(summon[Test[F, A]].map(Test.skip))
+    val genSuccess = description.map(success[F, A])
 
-    val success = description.map(Test.success[F, A])
+    val genSuspend =
+      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(defer[F, A]))
 
-    val generator =
-      Gen.oneOf(defer, error, failure, group, label, pure, skip, success)
+    val generator = Gen.oneOf(genError,
+                              genFailure,
+                              genGroup,
+                              genLabel,
+                              genPure,
+                              genSkip,
+                              genSuccess,
+                              genSuspend)
 
     Arbitrary(generator)
   }

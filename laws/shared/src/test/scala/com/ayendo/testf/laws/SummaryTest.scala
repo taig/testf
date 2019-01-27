@@ -8,5 +8,5 @@ object SummaryTest extends TestF {
   import Generators._
 
   override val suite: Assert[IO] =
-    Test.verify("EqLaws", EqTests[Summary].eqv).liftIO
+    verify("EqLaws", EqTests[Summary].eqv).liftIO
 }
