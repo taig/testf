@@ -56,19 +56,29 @@ final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {
 }
 
 final class TestOpsEither[F[_], A, B](val test: Test[F, Either[A, B]])
-    extends AnyVal {}
+    extends AnyVal {
+  def isLeft(implicit F: Functor[F], S: Show[B]): Assert[F] = test.flatMap {
+    case Right(value) => Error(show"Either is Left($value)")
+    case Left(_)      => Success()
+  }
+
+  def isRight(implicit F: Functor[F], S: Show[A]): Assert[F] = test.flatMap {
+    case Right(_)    => Success()
+    case Left(value) => Error(show"Either is Right($value)")
+  }
+}
 
 final class TestOpsOption[F[_], A](val test: Test[F, Option[A]])
     extends AnyVal {
   def isDefined(implicit F: Functor[F]): Assert[F] =
     test.flatMap { option =>
-      option.fold[Assert[F]](Error("Option is empty"))(_ => Success())
+      option.fold[Assert[F]](Error("Option is None"))(_ => Success())
     }
 
   def isEmpty(implicit F: Functor[F], S: Show[A]): Assert[F] =
     test.flatMap { option =>
       option.fold[Assert[F]](Success()) { value =>
-        Error(show"Option is not empty: $value")
+        Error(show"Option is Some($value)")
       }
     }
 }
