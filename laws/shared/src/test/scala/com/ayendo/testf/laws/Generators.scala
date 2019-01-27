@@ -2,7 +2,7 @@ package com.ayendo.testf.laws
 
 import cats._
 import cats.implicits._
-import com.ayendo.testf.{Summary, Test}
+import com.ayendo.testf.{Assertion, Summary, Test}
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
@@ -12,6 +12,36 @@ object Generators {
   val description: Gen[String] = Gen.choose(4, 16).flatMap { length =>
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
+
+  implicit val arbitraryAssertion: Arbitrary[Assertion] = Arbitrary(
+    Gen.const(Assertion))
+
+  implicit val cogenAssertion: Cogen[Assertion] = Cogen(_ => 1)
+
+  implicit val arbitrarySummary: Arbitrary[Summary] = {
+    val error = (description, description).mapN(Summary.Error)
+
+    val failure = (description, summon[Throwable]).mapN(Summary.Failure.apply)
+
+    val group = (
+      Gen.choose(0, 6).flatMap(Gen.listOfN(_, Gen.lzy(summon[Summary]))),
+      Gen.option(description)
+    ).mapN(Summary.Group)
+
+    val skip = description.map(Summary.Skip)
+
+    val success = description.map(Summary.Success)
+
+    Arbitrary(Gen.oneOf(error, failure, group, skip, success))
+  }
+
+  implicit val cogenSummary: Cogen[Summary] = Cogen.apply({
+    case _: Summary.Error   => 1
+    case _: Summary.Failure => 2
+    case _: Summary.Group   => 3
+    case _: Summary.Skip    => 4
+    case _: Summary.Success => 5
+  }: Summary => Long)
 
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
@@ -54,29 +84,4 @@ object Generators {
     }: Test[F, A] => Long)
 
   implicit def cogenTestId[A: Cogen]: Cogen[Test[Id, A]] = cogenTestF[Id, A]
-
-  implicit val arbitrarySummary: Arbitrary[Summary] = {
-    val error = (description, description).mapN(Summary.Error)
-
-    val failure = (description, summon[Throwable]).mapN(Summary.Failure.apply)
-
-    val group = (
-      Gen.choose(0, 6).flatMap(Gen.listOfN(_, Gen.lzy(summon[Summary]))),
-      Gen.option(description)
-    ).mapN(Summary.Group)
-
-    val skip = description.map(Summary.Skip)
-
-    val success = description.map(Summary.Success)
-
-    Arbitrary(Gen.oneOf(error, failure, group, skip, success))
-  }
-
-  implicit val cogenSummary: Cogen[Summary] = Cogen.apply({
-    case _: Summary.Error   => 1
-    case _: Summary.Failure => 2
-    case _: Summary.Group   => 3
-    case _: Summary.Skip    => 4
-    case _: Summary.Success => 5
-  }: Summary => Long)
 }

@@ -4,8 +4,8 @@ import cats.{Eq, Show}
 
 sealed trait Assertion
 
-object Assertion {
-  implicit val eq: Eq[Assertion] = (_, _) => true
+object Assertion extends Assertion {
+  implicit val eq: Eq[Assertion] = Eq.allEqual
 
   implicit val show: Show[Assertion] = _ => "Assertion"
 }
