@@ -149,7 +149,6 @@ object Test {
   private def run[F[_]](description: Option[String], test: Test[F, Assertion])(
       implicit F: Monad[F]): F[Summary] =
     (description, test) match {
-      case (description, Suspend(test)) => test.flatMap(run(description, _))
       case (description, Error(message)) =>
         F.pure(Summary.Error(description.getOrElse("error"), message))
       case (description, Failure(throwable)) =>
@@ -164,5 +163,6 @@ object Test {
         F.pure(Summary.Skip(description.getOrElse("skip")))
       case (description, Success()) =>
         F.pure(Summary.Success(description.getOrElse("success")))
+      case (description, Suspend(test)) => test.flatMap(run(description, _))
     }
 }

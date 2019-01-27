@@ -9,6 +9,9 @@ object Text {
       .map(value => color + value + Console.RESET)
       .mkString(EOL)
 
+  def colorizeCond(value: String, color: String, enabled: Boolean): String =
+    if (enabled) colorize(value, color) else value
+
   def padLeft(value: String, columns: Int): String =
     value
       .split(EOL)

@@ -50,7 +50,7 @@ object Formatter {
             color: Boolean): String = {
     val value = s"✗ $description" +
       message.map(EOL + Text.padLeft(_, 2)).orEmpty
-    if (color) Text.colorize(value, Console.RED) else value
+    Text.colorizeCond(value, Console.RED, color)
   }
 
   def failure(description: String,
@@ -58,22 +58,15 @@ object Formatter {
               color: Boolean): String = {
     val error = Formatter.throwable(throwable)
     val value = s"⚡$description" + EOL + Text.padLeft(error, 2)
-
-    if (color) Text.colorize(value, Console.RED) else value
+    Text.colorizeCond(value, Console.RED, color)
   }
 
-  def skip(description: String, color: Boolean): String = {
-    val value = s"~ $description"
-    if (color) Text.colorize(value, Console.YELLOW) else value
-  }
+  def skip(description: String, color: Boolean): String =
+    Text.colorizeCond(s"~ $description", Console.YELLOW, color)
 
-  def success(description: String, color: Boolean): String = {
-    val value = s"✓ $description"
-    if (color) Text.colorize(value, Console.GREEN) else value
-  }
+  def success(description: String, color: Boolean): String =
+    Text.colorizeCond(s"✓ $description", Console.GREEN, color)
 
   def throwable(throwable: Throwable): String =
-    throwable.getMessage +
-      EOL +
-      throwable.getStackTrace.mkString("", EOL, EOL)
+    throwable.getMessage + EOL + throwable.getStackTrace.mkString("", EOL, EOL)
 }
