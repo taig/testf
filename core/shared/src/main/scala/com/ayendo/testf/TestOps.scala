@@ -42,6 +42,32 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
     }
 }
 
+class TestOpsAssertion[F[_]](val test: Test[F, Assertion]) extends AnyVal {
+  def run(implicit F: Monad[F]): F[Summary] = TestOpsAssertion.run(None, test)
+}
+
+object TestOpsAssertion {
+  private def run[F[_]](description: Option[String], test: Test[F, Assertion])(
+      implicit F: Monad[F]): F[Summary] =
+    (description, test) match {
+      case (description, Error(message)) =>
+        F.pure(Summary.Error(description.getOrElse("error"), message))
+      case (description, Failure(throwable)) =>
+        F.pure(Summary.Failure(description.getOrElse("failure"), throwable))
+      case (description, Group(tests)) =>
+        tests.traverse(run(None, _)).map(Summary.Group(_, description))
+      case (d1, label: Label[F, Assertion]) =>
+        run(d1.orElse(Some(label.description)), label.test)
+      case (description, Pure(_)) =>
+        F.pure(Summary.Success(description.getOrElse("pure")))
+      case (description, Skip(test)) =>
+        F.pure(Summary.Skip(description.getOrElse("skip")))
+      case (description, Success()) =>
+        F.pure(Summary.Success(description.getOrElse("success")))
+      case (description, Suspend(test)) => test.flatMap(run(description, _))
+    }
+}
+
 final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {
   def isTrue(implicit F: Functor[F]): Assert[F] = test.flatMap {
     case true  => Success()

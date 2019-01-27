@@ -95,7 +95,7 @@ object Test {
     }
   }
 
-  implicit def monadId: Monad[Test[Id, ?]] = monad[Id]
+  implicit val monadId: Monad[Test[Id, ?]] = monad[Id]
 
   implicit def semigroup[F[_], A]: Semigroup[Test[F, A]] = {
     case (Group(xs), Group(ys)) => Group(xs |+| ys)
@@ -135,34 +135,13 @@ object Test {
   implicit def testOps[F[_], A](test: Test[F, A]): TestOps[F, A] =
     new TestOps(test)
 
+  implicit def testOpsAssertion[F[_]](
+      test: Test[F, Assertion]): TestOpsAssertion[F] =
+    new TestOpsAssertion[F](test)
+
   implicit def testOpsBoolean[F[_]](test: Test[F, Boolean]): TestOpsBoolean[F] =
     new TestOpsBoolean(test)
 
   implicit def testOpsMonoid[F[_], A](test: Test[F, A]): TestOpsMonoid[F, A] =
     new TestOpsMonoid[F, A](test)
-
-  implicit class TestOpsResult[F[_]](val test: Test[F, Assertion])
-      extends AnyVal {
-    def run(implicit F: Monad[F]): F[Summary] = Test.run(None, test)
-  }
-
-  private def run[F[_]](description: Option[String], test: Test[F, Assertion])(
-      implicit F: Monad[F]): F[Summary] =
-    (description, test) match {
-      case (description, Error(message)) =>
-        F.pure(Summary.Error(description.getOrElse("error"), message))
-      case (description, Failure(throwable)) =>
-        F.pure(Summary.Failure(description.getOrElse("failure"), throwable))
-      case (description, Group(tests)) =>
-        tests.traverse(run(None, _)).map(Summary.Group(_, description))
-      case (d1, label: Label[F, Assertion]) =>
-        run(d1.orElse(Some(label.description)), label.test)
-      case (description, Pure(_)) =>
-        F.pure(Summary.Success(description.getOrElse("pure")))
-      case (description, Skip(test)) =>
-        F.pure(Summary.Skip(description.getOrElse("skip")))
-      case (description, Success()) =>
-        F.pure(Summary.Success(description.getOrElse("success")))
-      case (description, Suspend(test)) => test.flatMap(run(description, _))
-    }
 }
