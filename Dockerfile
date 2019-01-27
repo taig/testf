@@ -14,6 +14,7 @@ RUN         mkdir -p \
               ./cache/src/main/scala/ \
               ./cache/src/test/scala/
 ADD         ./project/build.properties ./cache/project/
+ADD         ./.jvmopts ./cache/
 RUN         cd ./cache/ && sbt -v exit
 
 # Cache scala
