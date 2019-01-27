@@ -1,6 +1,7 @@
 package com.ayendo.testf
 
 import cats._
+import cats.data.Validated
 import cats.effect.IO
 import cats.implicits._
 
@@ -119,4 +120,8 @@ object Test {
 
   implicit def testOpsMonoid[F[_], A](test: Test[F, A]): TestOpsMonoid[F, A] =
     new TestOpsMonoid[F, A](test)
+
+  implicit def testOpsValidated[F[_], A, B](
+      test: Test[F, Validated[A, B]]): TestOpsValidated[F, A, B] =
+    new TestOpsValidated[F, A, B](test)
 }

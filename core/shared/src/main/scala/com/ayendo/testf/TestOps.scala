@@ -1,5 +1,6 @@
 package com.ayendo.testf
 
+import cats.data.Validated
 import cats.implicits._
 import cats.{Eq, Functor, Monad, Monoid, Show}
 import com.ayendo.testf.Test._
@@ -81,18 +82,30 @@ final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {
 }
 
 final class TestOpsMonoid[F[_], A](val test: Test[F, A]) {
-  implicit def isEmpty(implicit F: Functor[F],
-                       M: Monoid[A],
-                       E: Eq[A],
-                       S: Show[A]): Assert[F] = test.flatMap { value =>
+  def isEmpty(implicit F: Functor[F],
+              M: Monoid[A],
+              E: Eq[A],
+              S: Show[A]): Assert[F] = test.flatMap { value =>
     if (value.isEmpty) Success()
     else Error(show"not empty $value")
   }
 
-  implicit def nonEmpty(implicit F: Functor[F],
-                        M: Monoid[A],
-                        E: Eq[A],
-                        S: Show[A]): Assert[F] = test.flatMap { value =>
+  def nonEmpty(implicit F: Functor[F],
+               M: Monoid[A],
+               E: Eq[A],
+               S: Show[A]): Assert[F] = test.flatMap { value =>
     if (value.isEmpty) Error(show"empty $value") else Success()
+  }
+}
+
+final class TestOpsValidated[F[_], A, B](val test: Test[F, Validated[A, B]]) {
+  def isValid(implicit F: Functor[F], S: Show[A]): Assert[F] = test.flatMap {
+    validated =>
+      validated.fold(value => Error(show"invalid $value"), _ => Success())
+  }
+
+  def isInvalid(implicit F: Functor[F], S: Show[B]): Assert[F] = test.flatMap {
+    validated =>
+      validated.fold(_ => Success(), value => Error(show"valid $value"))
   }
 }
