@@ -1,10 +1,10 @@
 package com.ayendo.testf.runner
 
 import cats.effect.concurrent.MVar
-import cats.effect.{Async, ContextShift, IO, Sync}
+import cats.effect._
 import cats.implicits._
-import com.ayendo.testf.internal.{Formatter, Logging, Reflection}
-import com.ayendo.testf.{Summary, TestF}
+import com.ayendo.testf.internal._
+import com.ayendo.testf._
 import sbt.testing._
 
 final class TestFTask(task: TaskDef,
@@ -58,8 +58,11 @@ object TestFTask {
                       name: String,
                       summary: Summary): F[Unit] =
     loggers.traverse_ { logger =>
-      val message = Formatter.summary(summary, logger.ansiCodesSupported())
-      Logging.print[F](logger, name, Console.GREEN) *>
-        Logging.print(logger, message, Console.GREEN)
+      val color = logger.ansiCodesSupported()
+      val title =
+        Text.colorize(name,
+                      if (summary.isSuccess) Console.GREEN else Console.RED)
+      val message = Formatter.summary(summary, color)
+      Logging.print(logger, title) *> Logging.print(logger, message)
     }
 }
