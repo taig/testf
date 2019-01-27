@@ -16,7 +16,7 @@ object Generators {
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
     val defer =
-      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(Test.defer[F, A]))
+      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(Test.effect[F, A]))
 
     val error = (description, summon[String]).mapN(Test.error[F, A])
 
@@ -43,7 +43,7 @@ object Generators {
 
   implicit def cogenTestF[F[_], A]: Cogen[Test[F, A]] =
     Cogen({
-      case Test.Defer(_)    => 1
+      case Test.Suspend(_)  => 1
       case Test.Error(_)    => 2
       case Test.Failure(_)  => 3
       case Test.Group(_)    => 4

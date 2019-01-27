@@ -27,7 +27,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
         else Error(show"$actual does not match expected $expected")
       }
 
-      Defer(value)
+      Suspend(value)
     }
 
   def notEqualF(
@@ -38,7 +38,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
         else Error(show"$actual does match expected $expected")
       }
 
-      Defer(value)
+      Suspend(value)
     }
 }
 
