@@ -44,29 +44,18 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
 }
 
 class TestOpsAssertion[F[_]](val test: Test[F, Assertion]) extends AnyVal {
-  def compile(implicit F: Monad[F]): F[Report] = TestOpsAssertion.compile(None, test)
-}
-
-object TestOpsAssertion {
-  private def compile[F[_]](description: Option[String], test: Test[F, Assertion])(
-      implicit F: Monad[F]): F[Report] =
-    (description, test) match {
-      case (description, Error(message)) =>
-        F.pure(Report.Error(description.getOrElse("error"), message))
-      case (description, Failure(throwable)) =>
-        F.pure(Report.Failure(description.getOrElse("failure"), throwable))
-      case (description, Group(tests)) =>
-        tests.traverse(compile(None, _)).map(Report.Group(_, description))
-      case (d1, label: Label[F, Assertion]) =>
-        compile(d1.orElse(Some(label.description)), label.test)
-      case (description, Pure(_)) =>
-        F.pure(Report.Success(description.getOrElse("pure")))
-      case (description, Skip(test)) =>
-        F.pure(Report.Skip(description.getOrElse("skip")))
-      case (description, Success()) =>
-        F.pure(Report.Success(description.getOrElse("success")))
-      case (description, Suspend(test)) => test.flatMap(compile(description, _))
-    }
+  def compile(implicit F: Monad[F]): F[Report] = test match {
+    case Error(message)     => F.pure(Report.Error("error", message))
+    case Failure(throwable) => F.pure(Report.Failure("failure", throwable))
+    case Group(tests) =>
+      tests.traverse(_.compile).map(Report.Group(_, description = None))
+    case Label(description, test) =>
+      test.compile.map(_.withDescription(description))
+    case Pure(_)       => F.pure(Report.Success("pure"))
+    case Skip(_)       => F.pure(Report.Skip("skip"))
+    case Success()     => F.pure(Report.Success("success"))
+    case Suspend(test) => test.flatMap(_.compile)
+  }
 }
 
 final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {

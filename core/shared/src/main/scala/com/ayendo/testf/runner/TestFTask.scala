@@ -62,8 +62,7 @@ object TestFTask {
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val title =
-        Text.colorize(name,
-                      if (report.isSuccess) Console.GREEN else Console.RED)
+        Text.colorize(name, if (report.success) Console.GREEN else Console.RED)
       val message = Formatter.report(report, color)
       Logging.print(logger, title) *> Logging.print(logger, message)
     }

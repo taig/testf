@@ -62,7 +62,7 @@ object ReportTest extends TestF {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s2")),
-                      description = None)),
+                     description = None)),
       description = None)
 
     showReport(group).equal("✓ s1 |+| s2")
@@ -72,7 +72,7 @@ object ReportTest extends TestF {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s1")),
-                      description = None)),
+                     description = None)),
       description = None)
 
     showReport(group).equal("✓ s1")
@@ -82,7 +82,7 @@ object ReportTest extends TestF {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s2")),
-                      description = Some("group"))),
+                     description = Some("group"))),
       description = None)
 
     showReport(group).equal("✓ group")
@@ -92,8 +92,8 @@ object ReportTest extends TestF {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("success"),
-                           Report.Error("error", "reason")),
-                      description = None)),
+                          Report.Error("error", "reason")),
+                     description = None)),
       description = None
     )
 
@@ -107,8 +107,8 @@ object ReportTest extends TestF {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("success"),
-                           Report.Error("error", "reason")),
-                      description = Some("group"))),
+                          Report.Error("error", "reason")),
+                     description = Some("group"))),
       description = None)
 
     showReport(group).equal("""✗ group
@@ -123,10 +123,10 @@ object ReportTest extends TestF {
         Report.Group(
           List(
             Report.Group(List(Report.Success("s1"), Report.Success("s2")),
-                          description = None),
+                         description = None),
             Report.Group(List(Report.Error("error", "reason"),
-                               Report.Success("s3")),
-                          description = None)
+                              Report.Success("s3")),
+                         description = None)
           ),
           description = None
         )),
@@ -149,7 +149,7 @@ object ReportTest extends TestF {
         Report.Group(
           List(
             Report.Group(List(Report.Success("s1"), Report.Success("s2")),
-                          description = None),
+                         description = None),
             Report.Error("error", "reason"),
           ),
           description = None
@@ -171,7 +171,7 @@ object ReportTest extends TestF {
         Report.Group(
           List(
             Report.Group(List(Report.Success("s1"), Report.Success("s2")),
-                          description = Some("g1")),
+                         description = Some("g1")),
             Report.Error("error", "reason"),
           ),
           description = None

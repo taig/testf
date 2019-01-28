@@ -5,34 +5,41 @@ import cats.implicits._
 import sbt.testing.Status
 
 sealed trait Report extends Product with Serializable {
-  final def isSuccess: Boolean =
+  final def success: Boolean =
     PartialFunction.cond(this) {
-      case Report.Success(_)          => true
-      case Report.Group(reports, _) => reports.forall(_.isSuccess)
+      case Report.Success(_)        => true
+      case Report.Group(reports, _) => reports.forall(_.success)
     }
 
-  final def isErrorOrFailure: Boolean =
+  final def errorOrFailure: Boolean =
     PartialFunction.cond(this) {
       case Report.Error(_, _) | Report.Failure(_, _) => true
-      case Report.Group(reports, _)                 => reports.exists(_.isErrorOrFailure)
+      case Report.Group(reports, _)                  => reports.exists(_.errorOrFailure)
     }
 
-  def toStatus: Status
+  def status: Status
+
+  def withDescription(value: String): Report
 }
 
 object Report {
   case class Error(description: String, message: String) extends Report {
-    override val toStatus = Status.Error
+    override val status = Status.Error
+
+    override def withDescription(value: String): Report =
+      copy(description = value)
   }
 
-  case class Failure(description: String, throwable: Throwable)
-      extends Report {
-    override val toStatus = Status.Failure
+  case class Failure(description: String, throwable: Throwable) extends Report {
+    override val status = Status.Failure
+
+    override def withDescription(value: String): Report =
+      copy(description = value)
   }
 
   case class Group(reports: List[Report], description: Option[String])
       extends Report {
-    override val toStatus = reports.map(_.toStatus).foldLeft(Status.Success) {
+    override val status = reports.map(_.status).foldLeft(Status.Success) {
       case (Status.Error, _)                => Status.Error
       case (_, Status.Error)                => Status.Error
       case (Status.Failure, _)              => Status.Failure
@@ -42,14 +49,23 @@ object Report {
       case (status, Status.Skipped)         => status
       case _                                => ???
     }
+
+    override def withDescription(value: String): Report =
+      copy(description = Some(value))
   }
 
   case class Skip(description: String) extends Report {
-    override val toStatus = Status.Skipped
+    override val status = Status.Skipped
+
+    override def withDescription(value: String): Report =
+      copy(description = value)
   }
 
   case class Success(description: String) extends Report {
-    override val toStatus = Status.Success
+    override val status = Status.Success
+
+    override def withDescription(value: String): Report =
+      copy(description = value)
   }
 
   implicit val eq: Eq[Report] = new Eq[Report] {

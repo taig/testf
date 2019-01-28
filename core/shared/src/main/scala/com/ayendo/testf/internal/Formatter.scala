@@ -35,7 +35,7 @@ object Formatter {
     case group @ Report.Group(reports, description) =>
       val title = description.getOrElse(Formatter.description(group))
 
-      if (group.isSuccess) success(title, color)
+      if (group.success) success(title, color)
       else {
         val message = error(title, message = None, color)
         val details = reports.map(report(color, level + 1)).mkString(EOL)
