@@ -58,13 +58,13 @@ object TestFTask {
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      summary: Summary): F[Unit] =
+                      report: Report): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val title =
         Text.colorize(name,
-                      if (summary.isSuccess) Console.GREEN else Console.RED)
-      val message = Formatter.summary(summary, color)
+                      if (report.isSuccess) Console.GREEN else Console.RED)
+      val message = Formatter.report(report, color)
       Logging.print(logger, title) *> Logging.print(logger, message)
     }
 }

@@ -18,30 +18,30 @@ object Generators {
 
   implicit val cogenAssertion: Cogen[Assertion] = Cogen(_ => 1)
 
-  implicit val arbitrarySummary: Arbitrary[Summary] = {
-    val error = (description, description).mapN(Summary.Error)
+  implicit val arbitraryReport: Arbitrary[Report] = {
+    val error = (description, description).mapN(Report.Error)
 
-    val failure = (description, summon[Throwable]).mapN(Summary.Failure.apply)
+    val failure = (description, summon[Throwable]).mapN(Report.Failure.apply)
 
     val group = (
-      Gen.choose(0, 6).flatMap(Gen.listOfN(_, Gen.lzy(summon[Summary]))),
+      Gen.choose(0, 6).flatMap(Gen.listOfN(_, Gen.lzy(summon[Report]))),
       Gen.option(description)
-    ).mapN(Summary.Group)
+    ).mapN(Report.Group)
 
-    val skip = description.map(Summary.Skip)
+    val skip = description.map(Report.Skip)
 
-    val success = description.map(Summary.Success)
+    val success = description.map(Report.Success)
 
     Arbitrary(Gen.oneOf(error, failure, group, skip, success))
   }
 
-  implicit val cogenSummary: Cogen[Summary] = Cogen.apply({
-    case _: Summary.Error   => 1
-    case _: Summary.Failure => 2
-    case _: Summary.Group   => 3
-    case _: Summary.Skip    => 4
-    case _: Summary.Success => 5
-  }: Summary => Long)
+  implicit val cogenReport: Cogen[Report] = Cogen.apply({
+    case _: Report.Error   => 1
+    case _: Report.Failure => 2
+    case _: Report.Group   => 3
+    case _: Report.Skip    => 4
+    case _: Report.Success => 5
+  }: Report => Long)
 
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
