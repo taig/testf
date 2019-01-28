@@ -91,7 +91,8 @@ final class TestOpsMonoid[F[_], A](val test: Test[F, A]) extends AnyVal {
   }
 }
 
-final class TestOpsValidated[F[_], A, B](val test: Test[F, Validated[A, B]]) extends AnyVal {
+final class TestOpsValidated[F[_], A, B](val test: Test[F, Validated[A, B]])
+    extends AnyVal {
   def isValid(implicit F: Functor[F], S: Show[A]): Test[F, Assertion] =
     test.flatMap { validated =>
       validated.fold(value => Error(show"invalid $value"), _ => Success())

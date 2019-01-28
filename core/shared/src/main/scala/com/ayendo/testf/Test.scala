@@ -41,6 +41,18 @@ object Test {
   implicit def monad[F[_]: Functor]: Monad[Test[F, ?]] = new Monad[Test[F, ?]] {
     override def pure[A](x: A): Test[F, A] = Pure(x)
 
+    override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
+      fa match {
+        case error: Error[F, A]       => error.asInstanceOf[Error[F, B]]
+        case failure: Failure[F, A]   => failure.asInstanceOf[Failure[F, B]]
+        case Group(tests)             => Group(tests.map(map(_)(f)))
+        case Label(description, test) => Label(description, map(test)(f))
+        case Pure(value)              => Pure(f(value))
+        case Skip(test)               => Skip(map(test)(f))
+        case success: Success[F, A]   => success.asInstanceOf[Success[F, B]]
+        case Suspend(test)            => Suspend(test.map(map(_)(f)))
+      }
+
     override def flatMap[A, B](fa: Test[F, A])(f: A => Test[F, B]): Test[F, B] =
       fa match {
         case error: Error[F, A]       => error.asInstanceOf[Error[F, B]]
