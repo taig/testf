@@ -46,7 +46,7 @@ object TestFTask {
       testF <- F.delay(module.asInstanceOf[TestF])
       result <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite.run)
+        Async.liftIO(testF.suite.compile)
       }
       _ <- lock.take
       _ <- log[F](loggers, name, result)
