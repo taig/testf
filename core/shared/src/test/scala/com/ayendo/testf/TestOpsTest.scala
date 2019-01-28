@@ -11,19 +11,19 @@ object TestOpsTest extends TestF {
   val booleanTrue: Test[Id, Boolean] =
     value("booleanTrue", true)
 
-  val booleanFalseIsFalse: Assert[Id] =
+  val booleanFalseIsFalse: Test[Id, Assertion] =
     value("booleanFalseIsFalse", booleanFalse.isFalse)
       .equal(success("booleanFalse"))
 
-  val booleanFalseIsTrue: Assert[Id] =
+  val booleanFalseIsTrue: Test[Id, Assertion] =
     value("booleanFalseIsTrue", booleanFalse.isTrue)
       .equal(error("booleanFalse", "false"))
 
-  val booleanTrueIsFalse: Assert[Id] =
+  val booleanTrueIsFalse: Test[Id, Assertion] =
     value("booleanTrueIsFalse", booleanTrue.isFalse)
       .equal(error("booleanTrue", "true"))
 
-  val booleanTrueIsTrue: Assert[Id] =
+  val booleanTrueIsTrue: Test[Id, Assertion] =
     value("booleanTrueIsTrue", booleanTrue.isTrue)
       .equal(success("booleanTrue"))
 
@@ -38,28 +38,28 @@ object TestOpsTest extends TestF {
   val monoidDefined: Test[Id, Option[Int]] =
     value("monoidDefined", Some(3))
 
-  val monoidEmptyNonEmpty: Assert[Id] =
+  val monoidEmptyNonEmpty: Test[Id, Assertion] =
     value("monoidEmptyNonEmpty", monoidEmpty.nonEmpty)
       .equal(error("monoidEmpty", "empty None"))
 
-  val monoidEmptyIsEmpty: Assert[Id] =
+  val monoidEmptyIsEmpty: Test[Id, Assertion] =
     value("monoidEmptyIsEmpty", monoidEmpty.isEmpty)
       .equal(success("monoidEmpty"))
 
-  val monoidDefinedNonEmpty: Assert[Id] =
+  val monoidDefinedNonEmpty: Test[Id, Assertion] =
     value("monoidDefinedNonEmpty", monoidDefined.nonEmpty)
       .equal(success("monoidDefined"))
 
-  val monoidDefinedIsEmpty: Assert[Id] =
+  val monoidDefinedIsEmpty: Test[Id, Assertion] =
     value("monoidDefinedIsEmpty", monoidDefined.isEmpty)
       .equal(error("monoidDefined", "not empty Some(3)"))
 
-  val monoid: Assert[Id] =
+  val monoid: Test[Id, Assertion] =
     label("option",
           monoidEmptyNonEmpty |+|
             monoidEmptyIsEmpty |+|
             monoidDefinedNonEmpty |+|
             monoidDefinedIsEmpty)
 
-  override val suite: Assert[IO] = (boolean |+| monoid).liftIO
+  override val suite: Test[IO, Assertion] = (boolean |+| monoid).liftIO
 }

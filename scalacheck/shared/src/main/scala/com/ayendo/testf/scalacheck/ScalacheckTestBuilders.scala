@@ -7,9 +7,10 @@ import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
 
 trait ScalacheckTestBuilders {
-  def check(description: String,
-            prop: Prop,
-            parameters: Parameters = Parameters.default): Assert[Id] = {
+  def check(
+      description: String,
+      prop: Prop,
+      parameters: Parameters = Parameters.default): Test[Id, Assertion] = {
     val result = org.scalacheck.Test.check(parameters, prop)
 
     if (result.passed) success(description)
@@ -21,7 +22,7 @@ trait ScalacheckTestBuilders {
       parameters: Parameters = Parameters.default)(a: Gen[A])(f: A => P)(
       implicit p: P => Prop,
       sa: Shrink[A],
-      ppa: A => Pretty): Assert[Id] =
+      ppa: A => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a)(f), parameters)
 
   def check2[A, B, P](
@@ -31,7 +32,7 @@ trait ScalacheckTestBuilders {
                          sa: Shrink[A],
                          sb: Shrink[B],
                          ppa: A => Pretty,
-                         ppb: B => Pretty): Assert[Id] =
+                         ppb: B => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b)(prop), parameters)
 
   def check3[A, B, C, P](description: String,
@@ -44,7 +45,7 @@ trait ScalacheckTestBuilders {
                                        sc: Shrink[C],
                                        ppa: A => Pretty,
                                        ppb: B => Pretty,
-                                       ppc: C => Pretty): Assert[Id] =
+                                       ppc: C => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b, c)(prop), parameters)
 
   def check4[A, B, C, D, P](description: String,
@@ -52,15 +53,16 @@ trait ScalacheckTestBuilders {
       a: Gen[A],
       b: Gen[B],
       c: Gen[C],
-      d: Gen[D])(prop: (A, B, C, D) => P)(implicit p: P => Prop,
-                                          sa: Shrink[A],
-                                          sb: Shrink[B],
-                                          sc: Shrink[C],
-                                          sd: Shrink[D],
-                                          ppa: A => Pretty,
-                                          ppb: B => Pretty,
-                                          ppc: C => Pretty,
-                                          ppd: D => Pretty): Assert[Id] =
+      d: Gen[D])(prop: (A, B, C, D) => P)(
+      implicit p: P => Prop,
+      sa: Shrink[A],
+      sb: Shrink[B],
+      sc: Shrink[C],
+      sd: Shrink[D],
+      ppa: A => Pretty,
+      ppb: B => Pretty,
+      ppc: C => Pretty,
+      ppd: D => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b, c, d)(prop), parameters)
 
   def check5[A, B, C, D, E, P](description: String,
@@ -69,17 +71,18 @@ trait ScalacheckTestBuilders {
       b: Gen[B],
       c: Gen[C],
       d: Gen[D],
-      e: Gen[E])(prop: (A, B, C, D, E) => P)(implicit p: P => Prop,
-                                             sa: Shrink[A],
-                                             sb: Shrink[B],
-                                             sc: Shrink[C],
-                                             sd: Shrink[D],
-                                             se: Shrink[E],
-                                             ppa: A => Pretty,
-                                             ppb: B => Pretty,
-                                             ppc: C => Pretty,
-                                             ppd: D => Pretty,
-                                             ppe: E => Pretty): Assert[Id] =
+      e: Gen[E])(prop: (A, B, C, D, E) => P)(
+      implicit p: P => Prop,
+      sa: Shrink[A],
+      sb: Shrink[B],
+      sc: Shrink[C],
+      sd: Shrink[D],
+      se: Shrink[E],
+      ppa: A => Pretty,
+      ppb: B => Pretty,
+      ppc: C => Pretty,
+      ppd: D => Pretty,
+      ppe: E => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b, c, d, e)(prop), parameters)
 
   def check6[A, B, C, D, E, F, P](description: String,
@@ -89,19 +92,20 @@ trait ScalacheckTestBuilders {
       c: Gen[C],
       d: Gen[D],
       e: Gen[E],
-      f: Gen[F])(prop: (A, B, C, D, E, F) => P)(implicit p: P => Prop,
-                                                sa: Shrink[A],
-                                                sb: Shrink[B],
-                                                sc: Shrink[C],
-                                                sd: Shrink[D],
-                                                se: Shrink[E],
-                                                sf: Shrink[F],
-                                                ppa: A => Pretty,
-                                                ppb: B => Pretty,
-                                                ppc: C => Pretty,
-                                                ppd: D => Pretty,
-                                                ppe: E => Pretty,
-                                                ppf: F => Pretty): Assert[Id] =
+      f: Gen[F])(prop: (A, B, C, D, E, F) => P)(
+      implicit p: P => Prop,
+      sa: Shrink[A],
+      sb: Shrink[B],
+      sc: Shrink[C],
+      sd: Shrink[D],
+      se: Shrink[E],
+      sf: Shrink[F],
+      ppa: A => Pretty,
+      ppb: B => Pretty,
+      ppc: C => Pretty,
+      ppd: D => Pretty,
+      ppe: E => Pretty,
+      ppf: F => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b, c, d, e, f)(prop), parameters)
 
   def check7[A, B, C, D, E, F, G, P](
@@ -128,6 +132,6 @@ trait ScalacheckTestBuilders {
       ppd: D => Pretty,
       ppe: E => Pretty,
       ppf: F => Pretty,
-      ppg: G => Pretty): Assert[Id] =
+      ppg: G => Pretty): Test[Id, Assertion] =
     check(description, Prop.forAll(a, b, c, d, e, f, g)(prop), parameters)
 }

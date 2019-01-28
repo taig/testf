@@ -10,7 +10,7 @@ import com.ayendo.testf._
 object TestTest extends TestF {
   import Generators._
 
-  override val suite: Assert[IO] =
+  override val suite: Test[IO, Assertion] =
     (
       verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
         verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
