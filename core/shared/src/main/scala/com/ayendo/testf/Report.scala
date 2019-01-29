@@ -51,6 +51,17 @@ object Report {
     override val status = Status.Success
   }
 
+  def combine(x: Report, y: Report, description: Option[String]): Report =
+    (x, y) match {
+      case (Group(xs, None), Group(ys, None)) => Group(xs ++ ys, description)
+      case (Group(xs, None), y)               => Group(xs :+ y, description)
+      case (x, Group(ys, None))               => Group(x +: ys, description)
+      case (x, y)                             => Group(List(x, y), description)
+    }
+
+  implicit val semigroup: Semigroup[Report] =
+    Report.combine(_, _, description = None)
+
   implicit val eq: Eq[Report] = new Eq[Report] {
     override def eqv(x: Report, y: Report): Boolean =
       PartialFunction.cond((x, y)) {
@@ -60,5 +71,16 @@ object Report {
         case (Skip(x), Skip(y))                 => x === y
         case (Success(x), Success(y))           => x === y
       }
+  }
+
+  implicit val show: Show[Report] = {
+    case Error(description, message) =>
+      show"Error(description=$description, message=$message)"
+    case Failure(description, throwable) =>
+      show"Failure(description=$description, throwable=${throwable.getMessage})"
+    case Group(reports, description) =>
+      show"Group(reports=${reports.map(_.show)}, description=$description)"
+    case Skip(description)    => show"Skip($description)"
+    case Success(description) => show"Success($description)"
   }
 }
