@@ -13,10 +13,6 @@ object Generators {
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
 
-  implicit val arbitraryUnit: Arbitrary[Unit] = Arbitrary(Gen.const(()))
-
-  implicit val cogenUnit: Cogen[Unit] = Cogen(_ => 1)
-
   implicit val arbitraryReport: Arbitrary[Report] = {
     val error = (description, description).mapN(Report.Error)
 
