@@ -47,21 +47,6 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
     }
 }
 
-class TestOpsAssertion[F[_]](val test: Test[F, Assertion]) extends AnyVal {
-  def compile(implicit F: Monad[F]): F[Report] = test match {
-    case Error(message)     => F.pure(Report.Error("error", message))
-    case Failure(throwable) => F.pure(Report.Failure("failure", throwable))
-    case Group(tests) =>
-      tests.traverse(_.compile).map(Report.Group(_, description = None))
-    case Label(description, test) =>
-      test.compile.map(_.withDescription(description))
-    case Pure(_)       => F.pure(Report.Success("pure"))
-    case Skip(_)       => F.pure(Report.Skip("skip"))
-    case Success()     => F.pure(Report.Success("success"))
-    case Suspend(test) => test.flatMap(_.compile)
-  }
-}
-
 final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {
   def isTrue(implicit F: Functor[F]): Test[F, Assertion] = test.flatMap {
     case true  => Success()

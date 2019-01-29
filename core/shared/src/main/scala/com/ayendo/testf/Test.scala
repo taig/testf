@@ -18,6 +18,19 @@ sealed trait Test[F[_], A] extends Product with Serializable {
   }
 
   def liftIO(implicit F: Functor[F], L: LiftIO[F]): Test[IO, A] = mapK(L.lift)
+
+  def compile(implicit F: Monad[F]): F[Report] = this match {
+    case Test.Error(message)     => F.pure(Report.Error("error", message))
+    case Test.Failure(throwable) => F.pure(Report.Failure("failure", throwable))
+    case Test.Group(tests) =>
+      tests.traverse(_.compile).map(Report.Group(_, description = None))
+    case Test.Label(description, test) =>
+      test.compile.map(_.withDescription(description))
+    case Test.Pure(_)       => F.pure(Report.Success("pure"))
+    case Test.Skip(_)       => F.pure(Report.Skip("skip"))
+    case Test.Success()     => F.pure(Report.Success("success"))
+    case Test.Suspend(test) => test.flatMap(_.compile)
+  }
 }
 
 object Test {
@@ -122,10 +135,6 @@ object Test {
 
   implicit def testOps[F[_], A](test: Test[F, A]): TestOps[F, A] =
     new TestOps(test)
-
-  implicit def testOpsAssertion[F[_]](
-      test: Test[F, Assertion]): TestOpsAssertion[F] =
-    new TestOpsAssertion[F](test)
 
   implicit def testOpsBoolean[F[_]](test: Test[F, Boolean]): TestOpsBoolean[F] =
     new TestOpsBoolean(test)
