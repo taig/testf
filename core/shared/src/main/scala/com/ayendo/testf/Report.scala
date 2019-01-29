@@ -18,23 +18,15 @@ sealed trait Report extends Product with Serializable {
     }
 
   def status: Status
-
-  def withDescription(value: String): Report
 }
 
 object Report {
   case class Error(description: String, message: String) extends Report {
     override val status = Status.Error
-
-    override def withDescription(value: String): Report =
-      copy(description = value)
   }
 
   case class Failure(description: String, throwable: Throwable) extends Report {
     override val status = Status.Failure
-
-    override def withDescription(value: String): Report =
-      copy(description = value)
   }
 
   case class Group(reports: List[Report], description: Option[String])
@@ -49,23 +41,14 @@ object Report {
       case (status, Status.Skipped)         => status
       case _                                => ???
     }
-
-    override def withDescription(value: String): Report =
-      copy(description = Some(value))
   }
 
   case class Skip(description: String) extends Report {
     override val status = Status.Skipped
-
-    override def withDescription(value: String): Report =
-      copy(description = value)
   }
 
   case class Success(description: String) extends Report {
     override val status = Status.Success
-
-    override def withDescription(value: String): Report =
-      copy(description = value)
   }
 
   implicit val eq: Eq[Report] = new Eq[Report] {

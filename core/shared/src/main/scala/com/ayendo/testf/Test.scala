@@ -128,15 +128,28 @@ object Test {
 
   def compile[F[_], A](test: Test[F, A])(implicit F: Monad[F]): F[Report] =
     test match {
-      case Error(message)     => F.pure(Report.Error("error", message))
-      case Failure(throwable) => F.pure(Report.Failure("failure", throwable))
+      case Label(description, Error(message)) =>
+        F.pure(Report.Error(description, message))
+      case Label(description, Failure(throwable)) =>
+        F.pure(Report.Failure(description, throwable))
+      case Label(description, Label(_, test)) =>
+        compile(Label(description, test))
+      case Label(description, Group(tests)) =>
+        tests
+          .traverse(_.compile)
+          .map(Report.Group(_, description = Some(description)))
+      case Label(description, Pure(_))   => F.pure(Report.Success(description))
+      case Label(description, Skip(_))   => F.pure(Report.Skip("skip"))
+      case Label(description, Success()) => F.pure(Report.Success(description))
+      case Label(description, Suspend(test)) =>
+        test.map(Label(description, _)).flatMap(_.compile)
+      case error @ Error(_)     => compile(Label("error", error))
+      case failure @ Failure(_) => compile(Label("failure", failure))
+      case pure @ Pure(_)       => compile(Label("pure", pure))
+      case success @ Success()  => compile(Label("success", success))
       case Group(tests) =>
         tests.traverse(_.compile).map(Report.Group(_, description = None))
-      case Label(description, test) =>
-        test.compile.map(_.withDescription(description))
-      case Pure(_)       => F.pure(Report.Success("pure"))
       case Skip(_)       => F.pure(Report.Skip("skip"))
-      case Success()     => F.pure(Report.Success("success"))
       case Suspend(test) => test.flatMap(_.compile)
     }
 
