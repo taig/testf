@@ -6,16 +6,8 @@ import cats.effect.IO
 import cats.implicits._
 
 sealed trait Test[F[_], A] extends Product with Serializable {
-  def mapK[G[_]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] = this match {
-    case error: Test.Error[F, A]       => error.asInstanceOf[Test.Error[G, A]]
-    case failure: Test.Failure[F, A]   => failure.asInstanceOf[Test.Failure[G, A]]
-    case Test.Group(tests)             => Test.Group(tests.map(_.mapK(f)))
-    case Test.Label(description, test) => Test.Label(description, test.mapK(f))
-    case pure: Test.Pure[F, A]         => pure.asInstanceOf[Test[G, A]]
-    case Test.Skip(test)               => Test.Skip(test.mapK(f))
-    case success: Test.Success[F, A]   => success.asInstanceOf[Test.Success[G, A]]
-    case Test.Suspend(test)            => Test.Suspend(f(test.map(_.mapK(f))))
-  }
+  def mapK[G[_]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] =
+    Test.mapK(this)(f)
 
   def liftIO(implicit F: Functor[F], L: LiftIO[F]): Test[IO, A] = mapK(L.lift)
 
@@ -120,6 +112,18 @@ object Test {
       case Success()                => s"Success()"
       case Suspend(test)            => s"Defer($test)"
     }
+  }
+
+  def mapK[F[_], G[_], A](test: Test[F, A])(f: F ~> G)(
+      implicit F: Functor[F]): Test[G, A] = test match {
+    case error: Error[F, A]       => error.asInstanceOf[Error[G, A]]
+    case failure: Failure[F, A]   => failure.asInstanceOf[Failure[G, A]]
+    case Group(tests)             => Group(tests.map(_.mapK(f)))
+    case Label(description, test) => Label(description, test.mapK(f))
+    case pure: Pure[F, A]         => pure.asInstanceOf[Test[G, A]]
+    case Skip(test)               => Skip(test.mapK(f))
+    case success: Success[F, A]   => success.asInstanceOf[Success[G, A]]
+    case Suspend(test)            => Suspend(f(test.map(_.mapK(f))))
   }
 
   def compile[F[_], A](test: Test[F, A])(implicit F: Monad[F]): F[Report] =
