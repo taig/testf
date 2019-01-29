@@ -10,11 +10,11 @@ object ReportTest extends TestF {
   def showReport(report: Report)(implicit name: Name): Test[Id, String] =
     value(name.value, Formatter.report(report, color = false))
 
-  val showError: Test[Id, Assertion] =
+  val showError: Test[Id, Unit] =
     showReport(Report.Error("error", "reason")).equal("""✗ error
                                                           |  reason""".stripMargin)
 
-  val showFailure: Test[Id, Assertion] = {
+  val showFailure: Test[Id, Unit] = {
     val exception = new Exception("exception")
 
     val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
@@ -23,13 +23,13 @@ object ReportTest extends TestF {
                                                                 |$details""".stripMargin)
   }
 
-  val showSkip: Test[Id, Assertion] =
+  val showSkip: Test[Id, Unit] =
     showReport(Report.Skip("skip")).equal("~ skip")
 
-  val showSuccess: Test[Id, Assertion] =
+  val showSuccess: Test[Id, Unit] =
     showReport(Report.Success("success")).equal("✓ success")
 
-  val showGroupRootWithoutDescriptionSuccess: Test[Id, Assertion] = {
+  val showGroupRootWithoutDescriptionSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(Report.Success("s1"), Report.Success("s2")),
       description = None
@@ -39,7 +39,7 @@ object ReportTest extends TestF {
                                |✓ s2""".stripMargin)
   }
 
-  val showGroupRootWithDescriptionSuccess: Test[Id, Assertion] = {
+  val showGroupRootWithDescriptionSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(Report.Success("s1"), Report.Success("s2")),
       description = Some("success")
@@ -48,7 +48,7 @@ object ReportTest extends TestF {
     showReport(group).equal("✓ success")
   }
 
-  val showGroupRootWithRepeatedDescriptionsSuccess: Test[Id, Assertion] = {
+  val showGroupRootWithRepeatedDescriptionsSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(Report.Success("s1"), Report.Success("s1")),
       description = None
@@ -58,7 +58,7 @@ object ReportTest extends TestF {
                                |✓ s1""".stripMargin)
   }
 
-  val showGroupNestedWithoutDescriptionSuccess: Test[Id, Assertion] = {
+  val showGroupNestedWithoutDescriptionSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s2")),
@@ -68,7 +68,7 @@ object ReportTest extends TestF {
     showReport(group).equal("✓ s1 |+| s2")
   }
 
-  val showGroupNestedWithRepeatedDescriptionSuccess: Test[Id, Assertion] = {
+  val showGroupNestedWithRepeatedDescriptionSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s1")),
@@ -78,7 +78,7 @@ object ReportTest extends TestF {
     showReport(group).equal("✓ s1")
   }
 
-  val showGroupNestedWithDescriptionSuccess: Test[Id, Assertion] = {
+  val showGroupNestedWithDescriptionSuccess: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("s1"), Report.Success("s2")),
@@ -88,7 +88,7 @@ object ReportTest extends TestF {
     showReport(group).equal("✓ group")
   }
 
-  val showGroupNestedWithoutDescriptionError: Test[Id, Assertion] = {
+  val showGroupNestedWithoutDescriptionError: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("success"),
@@ -103,7 +103,7 @@ object ReportTest extends TestF {
                                |    reason""".stripMargin)
   }
 
-  val showGroupNestedWithDescriptionError: Test[Id, Assertion] = {
+  val showGroupNestedWithDescriptionError: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(List(Report.Success("success"),
@@ -117,7 +117,7 @@ object ReportTest extends TestF {
                   |    reason""".stripMargin)
   }
 
-  val showGroupDeeplyNestedError: Test[Id, Assertion] = {
+  val showGroupDeeplyNestedError: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(
@@ -143,7 +143,7 @@ object ReportTest extends TestF {
     )
   }
 
-  val showGroupDeeplyNestedWithoutDescriptionError: Test[Id, Assertion] = {
+  val showGroupDeeplyNestedWithoutDescriptionError: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(
@@ -165,7 +165,7 @@ object ReportTest extends TestF {
     )
   }
 
-  val showGroupDeeplyNestedWithDescriptionError: Test[Id, Assertion] = {
+  val showGroupDeeplyNestedWithDescriptionError: Test[Id, Unit] = {
     val group: Report = Report.Group(
       List(
         Report.Group(
@@ -187,7 +187,7 @@ object ReportTest extends TestF {
     )
   }
 
-  override val suite: Test[IO, Assertion] =
+  override val suite: Test[IO, Unit] =
     (
       showError |+|
         showFailure |+|

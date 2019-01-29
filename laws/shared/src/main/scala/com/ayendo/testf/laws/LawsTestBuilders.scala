@@ -7,13 +7,13 @@ import com.ayendo.testf.scalacheck._
 import org.typelevel.discipline.Laws
 
 trait LawsTestBuilders {
-  def verify(name: String, ruleSet: Laws#RuleSet): Test[Id, Assertion] = {
+  def verify(name: String, ruleSet: Laws#RuleSet): Test[Id, Unit] = {
     val checks = ruleSet.all.properties.map {
       case (id, prop) => check(name + "." + id, prop)
     }
 
-    Semigroup[Test[Id, Assertion]]
+    Semigroup[Test[Id, Unit]]
       .combineAllOption(checks)
-      .fold[Test[Id, Assertion]](success(name))(label(name, _))
+      .fold[Test[Id, Unit]](success(name))(label(name, _))
   }
 }
