@@ -10,7 +10,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                          E: Eq[A],
                          S: Show[A]): Test[F, Assertion] =
     test.flatMap { actual =>
-      if (actual === expected) Success[F, Assertion]()
+      if (actual === expected) Success[F]()
       else Error(show"$actual does not match expected $expected")
     }
 
@@ -18,7 +18,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                             E: Eq[A],
                             S: Show[A]): Test[F, Assertion] =
     test.flatMap { actual =>
-      if (actual =!= expected) Success[F, Assertion]()
+      if (actual =!= expected) Success[F]()
       else Error(show"$actual does match expected $expected")
     }
 
@@ -27,7 +27,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                              S: Show[A]): Test[F, Assertion] =
     test.flatMap { actual =>
       val value: F[Test[F, Assertion]] = expected.map { expected =>
-        if (actual === expected) Success[F, Assertion]()
+        if (actual === expected) Success[F]()
         else Error(show"$actual does not match expected $expected")
       }
 
@@ -39,7 +39,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                                 S: Show[A]): Test[F, Assertion] =
     test.flatMap { actual =>
       val value: F[Test[F, Assertion]] = expected.map { expected =>
-        if (actual =!= expected) Success[F, Assertion]()
+        if (actual =!= expected) Success[F]()
         else Error(show"$actual does match expected $expected")
       }
 

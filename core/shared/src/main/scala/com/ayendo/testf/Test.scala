@@ -5,7 +5,7 @@ import cats.data.Validated
 import cats.effect.IO
 import cats.implicits._
 
-sealed trait Test[F[_], A] extends Product with Serializable {
+sealed trait Test[F[_], +A] extends Product with Serializable {
   def mapK[G[_]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] =
     Test.mapK(this)(f)
 
@@ -15,9 +15,9 @@ sealed trait Test[F[_], A] extends Product with Serializable {
 }
 
 object Test {
-  final case class Error[F[_], A](message: String) extends Test[F, A]
+  final case class Error[F[_]](message: String) extends Test[F, Nothing]
 
-  final case class Failure[F[_], A](throwable: Throwable) extends Test[F, A]
+  final case class Failure[F[_]](throwable: Throwable) extends Test[F, Nothing]
 
   final case class Group[F[_], A](tests: List[Test[F, A]]) extends Test[F, A]
 
@@ -28,7 +28,7 @@ object Test {
 
   final case class Skip[F[_], A](test: Test[F, A]) extends Test[F, A]
 
-  final case class Success[F[_], A]() extends Test[F, A]
+  final case class Success[F[_]]() extends Test[F, Nothing]
 
   final case class Suspend[F[_], A](test: F[Test[F, A]]) extends Test[F, A]
 
@@ -37,39 +37,39 @@ object Test {
 
     override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
       fa match {
-        case error: Error[F, A]       => error.asInstanceOf[Error[F, B]]
-        case failure: Failure[F, A]   => failure.asInstanceOf[Failure[F, B]]
+        case error: Error[F]          => error
+        case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(map(_)(f)))
         case Label(description, test) => Label(description, map(test)(f))
         case Pure(value)              => Pure(f(value))
         case Skip(test)               => Skip(map(test)(f))
-        case success: Success[F, A]   => success.asInstanceOf[Success[F, B]]
+        case success: Success[F]      => success
         case Suspend(test)            => Suspend(test.map(map(_)(f)))
       }
 
     override def flatMap[A, B](fa: Test[F, A])(f: A => Test[F, B]): Test[F, B] =
       fa match {
-        case error: Error[F, A]       => error.asInstanceOf[Error[F, B]]
-        case failure: Failure[F, A]   => failure.asInstanceOf[Failure[F, B]]
+        case error: Error[F]          => error
+        case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(flatMap(_)(f)))
         case Label(description, test) => Label(description, flatMap(test)(f))
         case Pure(value)              => f(value)
         case Skip(test)               => Skip(flatMap(test)(f))
-        case success: Success[F, A]   => success.asInstanceOf[Success[F, B]]
+        case success: Success[F]      => success
         case Suspend(test)            => Suspend(test.map(flatMap(_)(f)))
       }
 
     override def tailRecM[A, B](a: A)(
         f: A => Test[F, Either[A, B]]): Test[F, B] = {
       def go(test: Test[F, Either[A, B]]): Test[F, B] = test match {
-        case error: Error[F, _]       => error.asInstanceOf[Error[F, B]]
-        case failure: Failure[F, _]   => failure.asInstanceOf[Failure[F, B]]
+        case error: Error[F]          => error
+        case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(go))
         case Label(description, test) => Label(description, go(test))
         case Pure(Right(b))           => Pure(b)
         case Pure(Left(a))            => go(f(a))
         case Skip(test)               => Skip(go(test))
-        case success: Success[F, _]   => success.asInstanceOf[Success[F, B]]
+        case success: Success[F]      => success
         case Suspend(test)            => Suspend(test.map(go))
       }
 
@@ -116,13 +116,13 @@ object Test {
 
   def mapK[F[_], G[_], A](test: Test[F, A])(f: F ~> G)(
       implicit F: Functor[F]): Test[G, A] = test match {
-    case error: Error[F, A]       => error.asInstanceOf[Error[G, A]]
-    case failure: Failure[F, A]   => failure.asInstanceOf[Failure[G, A]]
+    case error: Error[F]          => error.asInstanceOf[Error[G]]
+    case failure: Failure[F]      => failure.asInstanceOf[Failure[G]]
     case Group(tests)             => Group(tests.map(_.mapK(f)))
     case Label(description, test) => Label(description, test.mapK(f))
     case pure: Pure[F, A]         => pure.asInstanceOf[Test[G, A]]
     case Skip(test)               => Skip(test.mapK(f))
-    case success: Success[F, A]   => success.asInstanceOf[Success[G, A]]
+    case success: Success[F]      => success.asInstanceOf[Success[G]]
     case Suspend(test)            => Suspend(f(test.map(_.mapK(f))))
   }
 

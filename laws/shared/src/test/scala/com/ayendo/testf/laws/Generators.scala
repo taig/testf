@@ -45,9 +45,9 @@ object Generators {
 
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
-    val genError = (description, summon[String]).mapN(error[F, A])
+    val genError = (description, summon[String]).mapN(error[F])
 
-    val genFailure = (description, summon[Throwable]).mapN(failure[F, A])
+    val genFailure = (description, summon[Throwable]).mapN(failure[F])
 
     val genGroup =
       Gen.lzy((summon[Test[F, A]], summon[Test[F, A]]).mapN(_ |+| _))
@@ -58,7 +58,7 @@ object Generators {
 
     val genSkip = Gen.lzy(summon[Test[F, A]].map(skip))
 
-    val genSuccess = description.map(success[F, A])
+    val genSuccess = description.map(success[F])
 
     val genSuspend =
       Gen.lzy((description, summon[A].map(_.pure[F])).mapN(defer[F, A]))

@@ -22,13 +22,14 @@ trait TestBuilders {
   def pure[F[_], A](description: String, value: A): Test[F, A] =
     label(description, Pure(value))
 
-  def success[F[_], A](description: String): Test[F, A] =
+  def success[F[_]](description: String): Test[F, Nothing] =
     label(description, Success())
 
-  def error[F[_], A](description: String, message: String): Test[F, A] =
+  def error[F[_]](description: String, message: String): Test[F, Nothing] =
     label(description, Error(message))
 
-  def failure[F[_], A](description: String, throwable: Throwable): Test[F, A] =
+  def failure[F[_]](description: String,
+                    throwable: Throwable): Test[F, Nothing] =
     label(description, Failure(throwable))
 
   def skip[F[_], A](test: Test[F, A]): Test[F, A] = Skip(test)
