@@ -9,11 +9,11 @@ import org.typelevel.discipline.Laws
 trait LawsTestBuilders {
   def verify(name: String, ruleSet: Laws#RuleSet): Test[Id, Unit] = {
     val checks = ruleSet.all.properties.map {
-      case (id, prop) => check(name + "." + id, prop)
+      case (id, prop) => Test.check(name + "." + id, prop)
     }
 
     Semigroup[Test[Id, Unit]]
       .combineAllOption(checks)
-      .fold[Test[Id, Unit]](success(name))(label(name, _))
+      .fold[Test[Id, Unit]](Test.success(name, ()))(Test.label(name, _))
   }
 }

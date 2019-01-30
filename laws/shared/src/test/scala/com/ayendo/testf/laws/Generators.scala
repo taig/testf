@@ -14,58 +14,63 @@ object Generators {
   }
 
   implicit val arbitraryReport: Arbitrary[Report] = {
-    val error = (description, description).mapN(Report.Error)
+    val error = Gen.const(Report.Error)
 
-    val failure = (description, summon[Throwable]).mapN(Report.Failure.apply)
+    val failure = Gen.const(Report.Failure)
 
-    val group = (
-      Gen.choose(0, 6).flatMap(Gen.listOfN(_, Gen.lzy(summon[Report]))),
-      Gen.option(description)
-    ).mapN(Report.Group)
+    val group = for {
+      length <- Gen.choose(0, 6)
+      reports <- Gen.listOfN(length, Gen.lzy(summon[Report]))
+    } yield Report.Group(reports)
 
-    val skip = description.map(Report.Skip)
+    val label = (Gen.lzy(summon[Report]), description).mapN(Report.Label)
 
-    val success = description.map(Report.Success)
+    val message = (Gen.lzy(summon[Report]), description).mapN(Report.Message)
 
-    Arbitrary(Gen.oneOf(error, failure, group, skip, success))
+    val skip = Gen.const(Report.Skip)
+
+    val stacktrace =
+      (Gen.lzy(summon[Report]), summon[Throwable]).mapN(Report.Stacktrace)
+
+    val success = Gen.const(Report.Success)
+
+    Arbitrary(Gen
+      .oneOf(error, failure, group, label, message, skip, stacktrace, success))
   }
 
   implicit val cogenReport: Cogen[Report] = Cogen.apply({
-    case _: Report.Error   => 1
-    case _: Report.Failure => 2
-    case _: Report.Group   => 3
-    case _: Report.Skip    => 4
-    case _: Report.Success => 5
+    case Report.Error            => 1
+    case Report.Failure          => 2
+    case Report.Group(_)         => 3
+    case Report.Label(_, _)      => 4
+    case Report.Message(_, _)    => 5
+    case Report.Skip             => 6
+    case Report.Stacktrace(_, _) => 7
+    case Report.Success          => 8
   }: Report => Long)
 
   implicit def arbitraryTestF[F[_]: Applicative, A: Arbitrary]
     : Arbitrary[Test[F, A]] = {
-    val genError = (description, summon[String]).mapN(error[F])
+    val error = (description, summon[String]).mapN(Test.error[F])
 
-    val genFailure = (description, summon[Throwable]).mapN(failure[F])
+    val failure = (description, summon[Throwable]).mapN(Test.failure[F])
 
-    val genGroup =
+    val group =
       Gen.lzy((summon[Test[F, A]], summon[Test[F, A]]).mapN(_ |+| _))
 
-    val genLabel = Gen.lzy((description, summon[Test[F, A]]).mapN(label))
+    val label = Gen.lzy((description, summon[Test[F, A]]).mapN(Test.label))
 
-    val genPure = (description, summon[A]).mapN(pure[F, A])
+    val report = summon[Report].map(Test.Result[F])
 
-    val genSkip = Gen.lzy(summon[Test[F, A]].map(skip))
+    val skip = Gen.lzy(summon[Test[F, A]].map(Test.skip))
 
-    val genSuccess = description.map(success[F])
+    val success = (description, summon[A]).mapN(Test.success[F, A])
 
-    val genSuspend =
-      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(defer[F, A]))
+    val suspend =
+      Gen.lzy((description, summon[A].map(_.pure[F])).mapN(Test.defer[F, A]))
 
-    val generator = Gen.oneOf(genError,
-                              genFailure,
-                              genGroup,
-                              genLabel,
-                              genPure,
-                              genSkip,
-                              genSuccess,
-                              genSuspend)
+    val generator =
+      Gen.oneOf(error, failure, group, label, report, skip, success, suspend)
 
     Arbitrary(generator)
   }
@@ -80,9 +85,9 @@ object Generators {
       case Test.Failure(_)  => 3
       case Test.Group(_)    => 4
       case Test.Label(_, _) => 5
-      case Test.Pure(_)     => 6
+      case Test.Result(_)   => 6
       case Test.Skip(_)     => 7
-      case Test.Success()   => 8
+      case Test.Success(_)  => 8
     }: Test[F, A] => Long)
 
   implicit def cogenTestId[A: Cogen]: Cogen[Test[Id, A]] = cogenTestF[Id, A]

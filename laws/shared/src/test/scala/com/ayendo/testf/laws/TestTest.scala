@@ -12,9 +12,9 @@ object TestTest extends TestF {
 
   override val suite: Test[IO, Unit] =
     (
-      verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
-        verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
-        verify("MonadLaws",
-               MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String])
+      Test.verify("EqLaws", EqTests[Test[Id, Int]].eqv) |+|
+        Test.verify("SemigroupLaws", SemigroupTests[Test[Id, Int]].semigroup) |+|
+        Test.verify("MonadLaws",
+                    MonadTests[Test[Id, ?]].stackUnsafeMonad[Int, Int, String])
     ).liftIO
 }

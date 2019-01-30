@@ -8,19 +8,26 @@ import org.scalacheck.Gen
 
 object StringTest extends TestF {
   val startsWith: Test[Id, Unit] =
-    check2("startsWith")(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-      (a + b) startsWith a
+    Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
+      Test.pure("startsWith", a + b).startsWith(a)
     }
 
   val concatenate: Test[Id, Unit] =
-    check2("concatenate")(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-      (a + b).length >= a.length && (a + b).length >= b.length
+    Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
+      Test.label(
+        "concatenate",
+        Test.pure("lengthA", (a + b).length >= a.length).isTrue |+| Test
+          .pure("lengthB", (a + b).length >= b.length)
+          .isTrue)
     }
 
   val substring: Test[Id, Unit] =
-    check3("substring")(Gen.alphaNumStr, Gen.alphaNumStr, Gen.alphaNumStr) {
+    Test.check3(Gen.alphaNumStr, Gen.alphaNumStr, Gen.alphaNumStr) {
       (a, b, c) =>
-        (a + b + c).substring(a.length, a.length + b.length) == b
+        Test
+          .pure("substring",
+                (a + b + c).substring(a.length, a.length + b.length))
+          .equal(b)
     }
 
   override val suite: Test[IO, Unit] =

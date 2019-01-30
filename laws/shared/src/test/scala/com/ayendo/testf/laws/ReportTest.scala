@@ -9,6 +9,6 @@ object ReportTest extends TestF {
   import Generators._
 
   override val suite: Test[IO, Unit] =
-    (verify("EqLaws", EqTests[Report].eqv) |+|
-      verify("SemigroupLaws", SemigroupTests[Report].semigroup)).liftIO
+    (Test.verify("EqLaws", EqTests[Report].eqv) |+|
+      Test.verify("SemigroupLaws", SemigroupTests[Report].semigroup)).liftIO
 }

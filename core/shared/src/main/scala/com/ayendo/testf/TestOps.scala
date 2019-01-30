@@ -8,17 +8,18 @@ import com.ayendo.testf.Test._
 final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
   def equal(expected: A)(implicit F: Functor[F],
                          E: Eq[A],
-                         S: Show[A]): Test[F, Unit] =
+                         S: Show[A]): Test[F, Unit] = {
     test.flatMap { actual =>
-      if (actual === expected) Success[F]()
+      if (actual === expected) Success(())
       else Error(show"$actual does not match expected $expected")
     }
+  }
 
   def notEqual(expected: A)(implicit F: Functor[F],
                             E: Eq[A],
                             S: Show[A]): Test[F, Unit] =
     test.flatMap { actual =>
-      if (actual =!= expected) Success[F]()
+      if (actual =!= expected) Success(())
       else Error(show"$actual does match expected $expected")
     }
 
@@ -27,7 +28,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                              S: Show[A]): Test[F, Unit] =
     test.flatMap { actual =>
       val value: F[Test[F, Unit]] = expected.map { expected =>
-        if (actual === expected) Success[F]()
+        if (actual === expected) Success(())
         else Error(show"$actual does not match expected $expected")
       }
 
@@ -39,7 +40,7 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
                                 S: Show[A]): Test[F, Unit] =
     test.flatMap { actual =>
       val value: F[Test[F, Unit]] = expected.map { expected =>
-        if (actual =!= expected) Success[F]()
+        if (actual =!= expected) Success(())
         else Error(show"$actual does match expected $expected")
       }
 
@@ -49,13 +50,13 @@ final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
 
 final class TestOpsBoolean[F[_]](val test: Test[F, Boolean]) extends AnyVal {
   def isTrue(implicit F: Functor[F]): Test[F, Unit] = test.flatMap {
-    case true  => Success()
+    case true  => Success(())
     case false => Error("false")
   }
 
   def isFalse(implicit F: Functor[F]): Test[F, Unit] = test.flatMap {
     case true  => Error("true")
-    case false => Success()
+    case false => Success(())
   }
 }
 
@@ -64,7 +65,7 @@ final class TestOpsMonoid[F[_], A](val test: Test[F, A]) extends AnyVal {
               M: Monoid[A],
               E: Eq[A],
               S: Show[A]): Test[F, Unit] = test.flatMap { value =>
-    if (value.isEmpty) Success()
+    if (value.isEmpty) Success(())
     else Error(show"not empty $value")
   }
 
@@ -72,7 +73,7 @@ final class TestOpsMonoid[F[_], A](val test: Test[F, A]) extends AnyVal {
                M: Monoid[A],
                E: Eq[A],
                S: Show[A]): Test[F, Unit] = test.flatMap { value =>
-    if (value.isEmpty) Error(show"empty $value") else Success()
+    if (value.isEmpty) Error(show"empty $value") else Success(())
   }
 }
 
@@ -80,11 +81,19 @@ final class TestOpsValidated[F[_], A, B](val test: Test[F, Validated[A, B]])
     extends AnyVal {
   def isValid(implicit F: Functor[F], S: Show[A]): Test[F, Unit] =
     test.flatMap { validated =>
-      validated.fold(value => Error(show"invalid $value"), _ => Success())
+      validated.fold(value => Error(show"invalid $value"), _ => Success(()))
     }
 
   def isInvalid(implicit F: Functor[F], S: Show[B]): Test[F, Unit] =
     test.flatMap { validated =>
-      validated.fold(_ => Success(), value => Error(show"valid $value"))
+      validated.fold(_ => Success(()), value => Error(show"valid $value"))
+    }
+}
+
+final class TestOpsString[F[_]](val test: Test[F, String]) extends AnyVal {
+  def startsWith(value: String)(implicit F: Functor[F]): Test[F, Unit] =
+    test.flatMap { string =>
+      if (string.startsWith(value)) Test.Success(())
+      else Test.Error(s"$string does not start with $value")
     }
 }

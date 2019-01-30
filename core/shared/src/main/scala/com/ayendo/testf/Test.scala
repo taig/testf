@@ -14,7 +14,7 @@ sealed trait Test[F[_], +A] extends Product with Serializable {
   def compile(implicit F: Monad[F]): F[Report] = Test.compile(this)
 }
 
-object Test {
+object Test extends TestBuilders {
   final case class Error[F[_]](message: String) extends Test[F, Nothing]
 
   final case class Failure[F[_]](throwable: Throwable) extends Test[F, Nothing]
@@ -24,16 +24,16 @@ object Test {
   final case class Label[F[_], A](description: String, test: Test[F, A])
       extends Test[F, A]
 
-  final case class Pure[F[_], A](value: A) extends Test[F, A]
+  final case class Result[F[_]](report: Report) extends Test[F, Nothing]
 
   final case class Skip[F[_], A](test: Test[F, A]) extends Test[F, A]
 
-  final case class Success[F[_]]() extends Test[F, Nothing]
+  final case class Success[F[_], A](value: A) extends Test[F, A]
 
   final case class Suspend[F[_], A](test: F[Test[F, A]]) extends Test[F, A]
 
   implicit def monad[F[_]: Functor]: Monad[Test[F, ?]] = new Monad[Test[F, ?]] {
-    override def pure[A](x: A): Test[F, A] = Pure(x)
+    override def pure[A](x: A): Test[F, A] = Success(x)
 
     override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
       fa match {
@@ -41,9 +41,9 @@ object Test {
         case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(map(_)(f)))
         case Label(description, test) => Label(description, map(test)(f))
-        case Pure(value)              => Pure(f(value))
+        case result: Result[F]        => result
         case Skip(test)               => Skip(map(test)(f))
-        case success: Success[F]      => success
+        case Success(value)           => Success(f(value))
         case Suspend(test)            => Suspend(test.map(map(_)(f)))
       }
 
@@ -53,9 +53,9 @@ object Test {
         case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(flatMap(_)(f)))
         case Label(description, test) => Label(description, flatMap(test)(f))
-        case Pure(value)              => f(value)
+        case result: Result[F]        => result
         case Skip(test)               => Skip(flatMap(test)(f))
-        case success: Success[F]      => success
+        case Success(value)           => f(value)
         case Suspend(test)            => Suspend(test.map(flatMap(_)(f)))
       }
 
@@ -66,10 +66,10 @@ object Test {
         case failure: Failure[F]      => failure
         case Group(tests)             => Group(tests.map(go))
         case Label(description, test) => Label(description, go(test))
-        case Pure(Right(b))           => Pure(b)
-        case Pure(Left(a))            => go(f(a))
+        case result: Result[F]        => result
         case Skip(test)               => Skip(go(test))
-        case success: Success[F]      => success
+        case Success(Right(b))        => Success(b)
+        case Success(Left(a))         => go(f(a))
         case Suspend(test)            => Suspend(test.map(go))
       }
 
@@ -93,9 +93,9 @@ object Test {
         case (Failure(t1), Failure(t2))   => t1 == t2
         case (Group(xs), Group(ys))       => xs === ys
         case (Label(dx, x), Label(dy, y)) => dx === dy && eqv(x, y)
-        case (Pure(x), Pure(y))           => x === y
+        case (Result(rx), Result(ry))     => rx === ry
         case (Skip(x), Skip(y))           => eqv(x, y)
-        case (Success(), Success())       => true
+        case (Success(x), Success(y))     => x === y
         case (Suspend(x), Suspend(y))     => eqv(x, y)
       }
     }
@@ -107,9 +107,9 @@ object Test {
       case Failure(throwable)       => s"Failure(${throwable.getMessage})"
       case Group(tests)             => s"Group(${tests.map(show).mkString(", ")})"
       case Label(description, test) => s"Label($description, ${show(test)})"
-      case Pure(value)              => show"Pure($value)"
+      case Result(report)           => show"Result($report)"
       case Skip(test)               => s"Skip(${show(test)})"
-      case Success()                => s"Success()"
+      case Success(value)           => show"Success($value)"
       case Suspend(test)            => s"Defer($test)"
     }
   }
@@ -120,37 +120,24 @@ object Test {
     case failure: Failure[F]      => failure.asInstanceOf[Failure[G]]
     case Group(tests)             => Group(tests.map(_.mapK(f)))
     case Label(description, test) => Label(description, test.mapK(f))
-    case pure: Pure[F, A]         => pure.asInstanceOf[Test[G, A]]
+    case result: Result[F]        => result.asInstanceOf[Result[G]]
     case Skip(test)               => Skip(test.mapK(f))
-    case success: Success[F]      => success.asInstanceOf[Success[G]]
+    case success: Success[F, A]   => success.asInstanceOf[Test[G, A]]
     case Suspend(test)            => Suspend(f(test.map(_.mapK(f))))
   }
 
   def compile[F[_], A](test: Test[F, A])(implicit F: Monad[F]): F[Report] =
     test match {
-      case Label(description, Error(message)) =>
-        F.pure(Report.Error(description, message))
-      case Label(description, Failure(throwable)) =>
-        F.pure(Report.Failure(description, throwable))
-      case Label(description, Label(_, test)) =>
-        compile(Label(description, test))
-      case Label(description, Group(tests)) =>
-        tests
-          .traverse(_.compile)
-          .map(Report.Group(_, description = Some(description)))
-      case Label(description, Pure(_))   => F.pure(Report.Success(description))
-      case Label(description, Skip(_))   => F.pure(Report.Skip("skip"))
-      case Label(description, Success()) => F.pure(Report.Success(description))
-      case Label(description, Suspend(test)) =>
-        test.map(Label(description, _)).flatMap(_.compile)
-      case error @ Error(_)     => compile(Label("error", error))
-      case failure @ Failure(_) => compile(Label("failure", failure))
-      case pure @ Pure(_)       => compile(Label("pure", pure))
-      case success @ Success()  => compile(Label("success", success))
-      case Group(tests) =>
-        tests.traverse(_.compile).map(Report.Group(_, description = None))
-      case Skip(_)       => F.pure(Report.Skip("skip"))
-      case Suspend(test) => test.flatMap(_.compile)
+      case Error(message) => F.pure(Report.Message(Report.Error, message))
+      case Failure(throwable) =>
+        F.pure(Report.Stacktrace(Report.Failure, throwable))
+      case Label(description, test) =>
+        compile(test).map(Report.Label(_, description))
+      case Group(tests)   => tests.traverse(_.compile).map(Report.Group)
+      case Result(report) => F.pure(report)
+      case Skip(_)        => F.pure(Report.Skip)
+      case Success(_)     => F.pure(Report.Success)
+      case Suspend(test)  => test.flatMap(_.compile)
     }
 
   implicit def testOps[F[_], A](test: Test[F, A]): TestOps[F, A] =
@@ -165,4 +152,7 @@ object Test {
   implicit def testOpsValidated[F[_], A, B](
       test: Test[F, Validated[A, B]]): TestOpsValidated[F, A, B] =
     new TestOpsValidated[F, A, B](test)
+
+  implicit def testOpsString[F[_]](test: Test[F, String]): TestOpsString[F] =
+    new TestOpsString(test)
 }

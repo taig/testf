@@ -12,10 +12,8 @@ case class TestFEvent(task: TaskDef, report: Report) extends Event {
 
   override val status: Status = report.status
 
-  override val throwable: OptionalThrowable = report match {
-    case Report.Failure(_, throwable) => new OptionalThrowable(throwable)
-    case _                            => new OptionalThrowable()
-  }
+  override val throwable: OptionalThrowable =
+    report.cause.fold(new OptionalThrowable())(new OptionalThrowable(_))
 
   override val duration: Long = -1 // TODO
 }
