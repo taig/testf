@@ -91,9 +91,15 @@ final class TestOpsValidated[F[_], A, B](val test: Test[F, Validated[A, B]])
 }
 
 final class TestOpsString[F[_]](val test: Test[F, String]) extends AnyVal {
+  def contains(value: String)(implicit F: Functor[F]): Test[F, Unit] =
+    test.flatMap { source =>
+      if (source.contains(value)) Test.Success(())
+      else Test.Error(s"$source does not contain $value")
+    }
+
   def startsWith(value: String)(implicit F: Functor[F]): Test[F, Unit] =
-    test.flatMap { string =>
-      if (string.startsWith(value)) Test.Success(())
-      else Test.Error(s"$string does not start with $value")
+    test.flatMap { source =>
+      if (source.startsWith(value)) Test.Success(())
+      else Test.Error(s"$source does not start with $value")
     }
 }
