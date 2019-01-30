@@ -14,7 +14,7 @@ sealed trait Test[F[_], +A] extends Product with Serializable {
   def compile(implicit F: Monad[F]): F[Report] = Test.compile(this)
 }
 
-object Test extends TestBuilders {
+object Test extends Test1 with TestBuilders {
   final case class Error[F[_]](message: String) extends Test[F, Nothing]
 
   final case class Failure[F[_]](throwable: Throwable) extends Test[F, Nothing]
@@ -31,51 +31,6 @@ object Test extends TestBuilders {
   final case class Success[F[_], A](value: A) extends Test[F, A]
 
   final case class Suspend[F[_], A](test: F[Test[F, A]]) extends Test[F, A]
-
-  implicit def monad[F[_]: Functor]: Monad[Test[F, ?]] = new Monad[Test[F, ?]] {
-    override def pure[A](x: A): Test[F, A] = Success(x)
-
-    override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
-      fa match {
-        case error: Error[F]          => error
-        case failure: Failure[F]      => failure
-        case Group(tests)             => Group(tests.map(map(_)(f)))
-        case Label(description, test) => Label(description, map(test)(f))
-        case result: Result[F]        => result
-        case Skip(test)               => Skip(map(test)(f))
-        case Success(value)           => Success(f(value))
-        case Suspend(test)            => Suspend(test.map(map(_)(f)))
-      }
-
-    override def flatMap[A, B](fa: Test[F, A])(f: A => Test[F, B]): Test[F, B] =
-      fa match {
-        case error: Error[F]          => error
-        case failure: Failure[F]      => failure
-        case Group(tests)             => Group(tests.map(flatMap(_)(f)))
-        case Label(description, test) => Label(description, flatMap(test)(f))
-        case result: Result[F]        => result
-        case Skip(test)               => Skip(flatMap(test)(f))
-        case Success(value)           => f(value)
-        case Suspend(test)            => Suspend(test.map(flatMap(_)(f)))
-      }
-
-    override def tailRecM[A, B](a: A)(
-        f: A => Test[F, Either[A, B]]): Test[F, B] = {
-      def go(test: Test[F, Either[A, B]]): Test[F, B] = test match {
-        case error: Error[F]          => error
-        case failure: Failure[F]      => failure
-        case Group(tests)             => Group(tests.map(go))
-        case Label(description, test) => Label(description, go(test))
-        case result: Result[F]        => result
-        case Skip(test)               => Skip(go(test))
-        case Success(Right(b))        => Success(b)
-        case Success(Left(a))         => go(f(a))
-        case Suspend(test)            => Suspend(test.map(go))
-      }
-
-      go(f(a))
-    }
-  }
 
   implicit val monadId: Monad[Test[Id, ?]] = monad[Id]
 
@@ -155,4 +110,53 @@ object Test extends TestBuilders {
 
   implicit def testOpsString[F[_]](test: Test[F, String]): TestOpsString[F] =
     new TestOpsString(test)
+}
+
+trait Test1 {
+  implicit def monad[F[_]: Functor]: Monad[Test[F, ?]] = new Monad[Test[F, ?]] {
+    override def pure[A](x: A): Test[F, A] = Test.Success(x)
+
+    override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
+      fa match {
+        case error: Test.Error[F]     => error
+        case failure: Test.Failure[F] => failure
+        case Test.Group(tests)        => Test.Group(tests.map(map(_)(f)))
+        case Test.Label(description, test) =>
+          Test.Label(description, map(test)(f))
+        case result: Test.Result[F] => result
+        case Test.Skip(test)        => Test.Skip(map(test)(f))
+        case Test.Success(value)    => Test.Success(f(value))
+        case Test.Suspend(test)     => Test.Suspend(test.map(map(_)(f)))
+      }
+
+    override def flatMap[A, B](fa: Test[F, A])(f: A => Test[F, B]): Test[F, B] =
+      fa match {
+        case error: Test.Error[F]     => error
+        case failure: Test.Failure[F] => failure
+        case Test.Group(tests)        => Test.Group(tests.map(flatMap(_)(f)))
+        case Test.Label(description, test) =>
+          Test.Label(description, flatMap(test)(f))
+        case result: Test.Result[F] => result
+        case Test.Skip(test)        => Test.Skip(flatMap(test)(f))
+        case Test.Success(value)    => f(value)
+        case Test.Suspend(test)     => Test.Suspend(test.map(flatMap(_)(f)))
+      }
+
+    override def tailRecM[A, B](a: A)(
+        f: A => Test[F, Either[A, B]]): Test[F, B] = {
+      def go(test: Test[F, Either[A, B]]): Test[F, B] = test match {
+        case error: Test.Error[F]          => error
+        case failure: Test.Failure[F]      => failure
+        case Test.Group(tests)             => Test.Group(tests.map(go))
+        case Test.Label(description, test) => Test.Label(description, go(test))
+        case result: Test.Result[F]        => result
+        case Test.Skip(test)               => Test.Skip(go(test))
+        case Test.Success(Right(b))        => Test.Success(b)
+        case Test.Success(Left(a))         => go(f(a))
+        case Test.Suspend(test)            => Test.Suspend(test.map(go))
+      }
+
+      go(f(a))
+    }
+  }
 }
