@@ -1,7 +1,7 @@
 # CHANGELOG
 
-## 0.0.1-SNAPSHOT
+## 0.0.1
 
-_2019-xx-xx_
+_2019-02-01_
 
-- Initial commit
+* Initial release
