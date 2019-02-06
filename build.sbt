@@ -11,10 +11,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
-        "org.typelevel" %%% "cats-core" % "1.5.0" ::
+        "org.typelevel" %%% "cats-core" % "1.6.0" ::
         "org.typelevel" %%% "cats-effect" % "1.2.0" ::
         "com.lihaoyi" %%% "sourcecode" % "0.1.5" % "test" ::
-        "org.typelevel" %%% "cats-laws" % "1.5.0" % "test" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
@@ -64,7 +63,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-laws" % "1.5.0" ::
+      "org.typelevel" %%% "cats-laws" % "1.6.0" ::
         "io.chrisdavenport" %%% "cats-scalacheck" % "0.1.0" % "test" ::
         Nil,
     name := "testf-laws",

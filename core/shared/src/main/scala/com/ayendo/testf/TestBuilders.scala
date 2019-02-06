@@ -1,31 +1,55 @@
 package com.ayendo.testf
 
-import cats.{Functor, Id}
+import cats._
 import cats.implicits._
 
 trait TestBuilders {
-  def defer[F[_]: Functor, A](description: String, value: F[A]): Test[F, A] =
-    label(description, Test.Suspend[F, A](value.map(Test.Success.apply)))
+  def apply[A](label: String, value: A): Test[A] =
+    this.success(label, value)
 
-  def label[F[_], A](description: String, test: Test[F, A]): Test[F, A] =
-    Test.Label(description, test)
+  def cond(predicate: Boolean): Test[Unit] =
+    if (predicate) this.unit else this.error("false")
 
-  def pure[A](description: String, value: A): Test[Id, A] =
-    success(description, value)
+  def cond(label: String, predicate: Boolean): Test[Unit] =
+    this.label(label, this.cond(predicate))
 
-  def success[F[_], A](description: String, value: A): Test[F, A] =
-    label(description, Test.Success(value))
+  def equal[A: Eq: Show](actual: A, expected: A): Test[Unit] =
+    if (actual === expected) this.unit
+    else this.error(show"$actual does not match expected $expected")
 
-  def error[F[_]](description: String, message: String): Test[F, Nothing] =
-    label(description, Test.Error(message))
+  def equal[A: Eq: Show](label: String, actual: A, expected: A): Test[Unit] =
+    this.label(label, this.equal(actual, expected))
 
-  def failure[F[_]](description: String,
-                    throwable: Throwable): Test[F, Nothing] =
-    label(description, Test.Failure(throwable))
+  def group[A](tests: Test[A]*): Test[A] = Test.Group(tests.toList)
 
-  def result[F[_]](report: Report): Test[F, Nothing] = Test.Result(report)
+  def label[A](label: String, test: Test[A]): Test[A] =
+    Test.Label(label, test)
 
-  def skip[F[_], A](test: Test[F, A]): Test[F, A] = Test.Skip(test)
+  def message[A](label: String, test: Test[A]): Test[A] =
+    Test.Message(label, test)
 
-  def suspend[F[_], A](test: F[Test[F, A]]): Test[F, A] = Test.Suspend(test)
+  def not[A](test: Test[A]): Test[Unit] =
+    if (test.success) test.flatMap(_ => this.error("not(success)"))
+    else test.flatMap(_ => this.unit)
+
+  def pure[A](value: A): Test[A] = Test.Success(value)
+
+  def success[A](value: A): Test[A] = Test.Success(value)
+
+  def success[A](label: String, value: A): Test[A] =
+    this.label(label, this.success(value))
+
+  def error(message: String): Test[Nothing] = Test.Error(message)
+
+  def error(label: String, message: String): Test[Nothing] =
+    this.label(label, this.error(message))
+
+  def failure(label: String, throwable: Throwable): Test[Nothing] =
+    this.label(label, Test.Failure(throwable))
+
+  def skip[A](test: Test[A]): Test[A] = Test.Skip(test)
+
+  val unit: Test[Unit] = success(())
+
+  def unit(label: String): Test[Unit] = this.success(label, ())
 }

@@ -44,26 +44,26 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      result <- {
+      test <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite.compile)
+        Async.liftIO(testF.suite)
       }
       _ <- lock.take
-      _ <- log[F](loggers, name, result)
+      _ <- log[F](loggers, name, test)
       _ <- lock.put(true)
-      event = TestFEvent(task, result)
+      event = TestFEvent(task, test)
       _ <- F.delay(eventHandler.handle(event))
     } yield ()
   }
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      report: Report): F[Unit] =
+                      test: Test[_]): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val title =
-        Text.colorize(name, if (report.success) Console.GREEN else Console.RED)
-      val message = Formatter.report(report, color)
+        Text.colorize(name, if (test.success) Console.GREEN else Console.RED)
+      val message = Formatter.test(test, color)
       Logging.print(logger, title) *> Logging.print(logger, message)
     }
 }
