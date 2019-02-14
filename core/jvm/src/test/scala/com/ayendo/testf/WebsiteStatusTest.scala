@@ -16,17 +16,21 @@ object WebsiteStatusTest extends TestF {
       }
   }
 
-  val typelevel: IO[Test[Unit]] =
-    request("https://typelevel.org/").map(Test.equal("typelevel", _, 200))
+  val typelevel: Test[IO, Unit] =
+    Test
+      .liftF("typelevel", request("https://typelevel.org/"))
+      .flatMap(Test.equal(_, 200))
 
-  val scalaLang: IO[Test[Unit]] =
-    request("https://www.scala-lang.org/").map(Test.equal("scala-lang", _, 200))
+  val scalaLang: Test[IO, Unit] =
+    Test
+      .liftF("scala-lang", request("https://www.scala-lang.org/"))
+      .flatMap(Test.equal(_, 200))
 
-  val github: IO[Test[Unit]] =
-    request("https://github.com/").map(Test.equal("github", _, 200))
+  val github: Test[IO, Unit] =
+    Test
+      .liftF("github", request("https://github.com/"))
+      .flatMap(Test.equal(_, 200))
 
-  override val suite: IO[Test[Unit]] = NonEmptyList
-    .of(typelevel, scalaLang, github)
-    .parSequence
-    .map(_.reduceLeft(_ |+| _))
+  override val suite: Test[IO, Unit] =
+    NonEmptyList.of(typelevel, scalaLang, github).reduceLeft(_ |+| _)
 }

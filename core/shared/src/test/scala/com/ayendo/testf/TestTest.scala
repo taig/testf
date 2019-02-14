@@ -1,5 +1,6 @@
 package com.ayendo.testf
 
+import cats.Id
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.implicits._
@@ -7,16 +8,16 @@ import com.ayendo.testf.internal.{Formatter, Text}
 import sourcecode.Name
 
 object TestTest extends TestF {
-  def showTest(test: Test[_], expected: String)(
-      implicit name: Name): Test[Unit] =
+  def showTest(test: Test[Id, _], expected: String)(
+      implicit name: Name): Test[Id, Unit] =
     Test.equal(name.value, Formatter.test(test, color = false), expected)
 
-  val showError: Test[Unit] =
+  val showError: Test[Id, Unit] =
     showTest(Test.error("error", "reason"),
              """✗ error
                |  reason""".stripMargin)
 
-  val showFailure: Test[Unit] = {
+  val showFailure: Test[Id, Unit] = {
     val exception = new Exception("exception")
 
     val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
@@ -26,59 +27,61 @@ object TestTest extends TestF {
                 |$details""".stripMargin)
   }
 
-  val showSkip: Test[Unit] =
+  val showSkip: Test[Id, Unit] =
     showTest(Test.skip(Test.unit), "~ skip")
 
-  val showSuccess: Test[Unit] =
+  val showSuccess: Test[Id, Unit] =
     showTest(Test.success("success", "foobar"), "✓ success")
 
-  val showGroupRootWithoutLabelSuccess: Test[Unit] = {
-    val test = Test.unit("s1") |+| Test.unit("s2")
+  val showGroupRootWithoutLabelSuccess: Test[Id, Unit] = {
+    val test = Test.unit[Id]("s1") |+| Test.unit[Id]("s2")
 
     showTest(test,
              """✓ s1
                |✓ s2""".stripMargin)
   }
 
-  val showGroupRootWithLabelSuccess: Test[Unit] = {
+  val showGroupRootWithLabelSuccess: Test[Id, Unit] = {
     val test = Test.label(
       "success",
-      Test.unit("s1") |+| Test.unit("s2"),
+      Test.unit[Id]("s1") |+| Test.unit[Id]("s2"),
     )
 
     showTest(test, "✓ success")
   }
 
-  val showGroupRootWithRepeatedLabelSuccess: Test[Unit] = {
-    val test = Test.unit("s1") |+| Test.unit("s1")
+  val showGroupRootWithRepeatedLabelSuccess: Test[Id, Unit] = {
+    val test = Test.unit[Id]("s1") |+| Test.unit[Id]("s1")
 
     showTest(test,
              """✓ s1
                |✓ s1""".stripMargin)
   }
 
-  val showGroupNestedWithoutLabelSuccess: Test[Unit] = {
-    val test = Test.group(Test.unit("s1") |+| Test.unit("s2"))
+  val showGroupNestedWithoutLabelSuccess: Test[Id, Unit] = {
+    val test = Test.group(Test.unit[Id]("s1") |+| Test.unit[Id]("s2"))
 
     showTest(test, "✓ s1 |+| s2")
   }
 
-  val showGroupNestedWithRepeatedLabelSuccess: Test[Unit] = {
-    val test = Test.group(Test.unit("s1") |+| Test.unit("s1"))
+  val showGroupNestedWithRepeatedLabelSuccess: Test[Id, Unit] = {
+    val test = Test.group(Test.unit[Id]("s1") |+| Test.unit[Id]("s1"))
 
     showTest(test, "✓ s1")
   }
 
-  val showGroupNestedWithLabelSuccess: Test[Unit] = {
+  val showGroupNestedWithLabelSuccess: Test[Id, Unit] = {
     val test = Test.group(
-      Test.label("group", Test.group(Test.unit("s1") |+| Test.unit("s2"))))
+      Test.label("group",
+                 Test.group(Test.unit[Id]("s1") |+| Test.unit[Id]("s2"))))
 
     showTest(test, "✓ group")
   }
 
-  val showGroupNestedWithoutLabelError: Test[Unit] = {
-    val test =
-      Test.group(Test.success("success") |+| Test.error("error", "reason"))
+  val showGroupNestedWithoutLabelError: Test[Id, Unit] = {
+    val test = Test.group(
+      Test.success[Id, String]("success") |+|
+        Test.error[Id]("error", "reason"))
 
     showTest(test,
              """✗ success |+| error
@@ -87,10 +90,11 @@ object TestTest extends TestF {
                      |    reason""".stripMargin)
   }
 
-  val showGroupNestedWithLabelError: Test[Unit] = {
+  val showGroupNestedWithLabelError: Test[Id, Unit] = {
     val test = Test.group(
       Test.label("group",
-                 Test.success("success") |+| Test.error("error", "reason")))
+                 Test.success[Id, String]("success") |+| Test
+                   .error[Id]("error", "reason")))
 
     showTest(test,
              """✗ group
@@ -99,11 +103,11 @@ object TestTest extends TestF {
                      |    reason""".stripMargin)
   }
 
-  val showGroupDeeplyNestedError: Test[Unit] = {
+  val showGroupDeeplyNestedError: Test[Id, Unit] = {
     val test = Test.group(
       Test.group(
-        Test.unit("s1") |+| Test.unit("s2"),
-        Test.unit("s3") |+| Test.error("error", "reason")
+        Test.unit[Id]("s1") |+| Test.unit[Id]("s2"),
+        Test.unit[Id]("s3") |+| Test.error("error", "reason")
       )
     )
 
@@ -118,10 +122,10 @@ object TestTest extends TestF {
     )
   }
 
-  val showGroupDeeplyNestedWithoutLabelError: Test[Unit] = {
+  val showGroupDeeplyNestedWithoutLabelError: Test[Id, Unit] = {
     val test = Test.group(
       Test.group(
-        Test.unit("s1") |+| Test.unit("s2"),
+        Test.unit[Id]("s1") |+| Test.unit[Id]("s2"),
         Test.error("error", "reason"),
       )
     )
@@ -133,10 +137,10 @@ object TestTest extends TestF {
                      |    reason""".stripMargin)
   }
 
-  val showGroupDeeplyNestedWithDescriptionError: Test[Unit] = {
+  val showGroupDeeplyNestedWithDescriptionError: Test[Id, Unit] = {
     val test = Test.group(
       Test.group(
-        Test.label("g1", Test.unit("s1") |+| Test.unit("s2")),
+        Test.label("g1", Test.unit[Id]("s1") |+| Test.unit[Id]("s2")),
         Test.error("error", "reason"),
       )
     )
@@ -148,7 +152,7 @@ object TestTest extends TestF {
                      |    reason""".stripMargin)
   }
 
-  override val suite: IO[Test[Unit]] = {
+  override def suite: Test[IO, Unit] = {
     val tests = NonEmptyList.of(
       showError,
       showFailure,
@@ -166,6 +170,7 @@ object TestTest extends TestF {
       showGroupDeeplyNestedWithoutLabelError,
       showGroupDeeplyNestedWithDescriptionError
     )
-    IO.pure(tests.reduceLeft(_ |+| _))
+
+    tests.reduceLeft(_ |+| _).mapK(Test.liftId)
   }
 }

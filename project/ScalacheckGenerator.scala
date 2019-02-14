@@ -2,6 +2,7 @@ object ScalacheckGenerator {
   def apply(pkg: String, name: String): String = {
     s"""package $pkg
        |
+       |import cats.Id
        |import com.ayendo.testf._
        |import org.scalacheck.Test.Parameters
        |import org.scalacheck.util.Pretty
@@ -33,11 +34,11 @@ object ScalacheckGenerator {
   def check(length: Int): String = {
     s"""
        |  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters = Parameters.default)(
-       |    f: (${types(length)}) => Test[Unit]
+       |    f: (${types(length)}) => Test[Id, Unit]
        |  )(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test[Unit] =
+       |  ): Test[Id, Unit] =
        |    ScalacheckTestBuilders.check(Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
          length)}))
      """.stripMargin

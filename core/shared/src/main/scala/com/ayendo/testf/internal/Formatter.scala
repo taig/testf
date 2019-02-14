@@ -1,12 +1,14 @@
 package com.ayendo.testf.internal
 
+import cats.Id
 import cats.implicits._
 import com.ayendo.testf.Test
 
 import scala.compat.Platform.EOL
 
 object Formatter {
-  val label: Test[_] => String = {
+  val label: Test[Id, _] => String = {
+    case Test.Defer(test)      => label(test)
     case Test.Error(_)         => "error"
     case Test.Failure(_)       => "failure"
     case Test.Label(label, _)  => label
@@ -21,10 +23,11 @@ object Formatter {
     case Test.Success(_) => "success"
   }
 
-  def test[A](value: Test[A], color: Boolean): String =
+  def test[A](value: Test[Id, A], color: Boolean): String =
     this.test(color, level = 0)(value)
 
-  def test[A](color: Boolean, level: Int): Test[A] => String = {
+  def test[A](color: Boolean, level: Int): Test[Id, A] => String = {
+    case Test.Defer(test) => this.test(color, level)(test)
     case Test.Group(tests) if level === 0 =>
       tests.map(this.test(color, level + 1)).mkString(EOL)
     case group @ Test.Group(tests) =>

@@ -1,5 +1,6 @@
 package com.ayendo.testf.runner
 
+import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
@@ -46,7 +47,7 @@ object TestFTask {
       testF <- F.delay(module.asInstanceOf[TestF])
       test <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite)
+        Async.liftIO(testF.suite.compile)
       }
       _ <- lock.take
       _ <- log[F](loggers, name, test)
@@ -58,7 +59,7 @@ object TestFTask {
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      test: Test[_]): F[Unit] =
+                      test: Test[Id, _]): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val title =
