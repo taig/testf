@@ -52,8 +52,8 @@ object TestFTask {
       _ <- lock.take
       _ <- log[F](loggers, name, test)
       _ <- lock.put(true)
-      event = TestFEvent(task, test)
-      _ <- F.delay(eventHandler.handle(event))
+      events = test.root.map(TestFEvent(task, _))
+      _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
   }
 
