@@ -4,7 +4,8 @@ import cats.Id
 import com.ayendo.testf.Test
 import sbt.testing._
 
-case class TestFEvent(task: TaskDef, test: Test[Id, _]) extends Event {
+case class TestFEvent(task: TaskDef, duration: Long, test: Test[Id, _])
+    extends Event {
   override val fullyQualifiedName: String = task.fullyQualifiedName()
 
   override val fingerprint: Fingerprint = task.fingerprint()
@@ -15,6 +16,4 @@ case class TestFEvent(task: TaskDef, test: Test[Id, _]) extends Event {
 
   override val throwable: OptionalThrowable =
     test.failure.fold(new OptionalThrowable())(new OptionalThrowable(_))
-
-  override val duration: Long = -1 // TODO
 }

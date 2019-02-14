@@ -23,65 +23,82 @@ object Formatter {
     case Test.Success(_) => "success"
   }
 
-  def test[A](value: Test[Id, A], color: Boolean): String =
-    this.test(color, level = 0)(value)
+  def test[A](value: Test[Id, A], duration: Long, color: Boolean): String =
+    this.test(color, duration, level = 0)(value)
 
-  def test[A](color: Boolean, level: Int): Test[Id, A] => String = {
-    case Test.Defer(test) => this.test(color, level)(test)
-    case Test.Group(tests) if level === 0 =>
-      tests.map(this.test(color, level + 1)).mkString(EOL)
+  def test[A](color: Boolean,
+              duration: Long,
+              level: Int): Test[Id, A] => String = {
+    case Test.Defer(test) => this.test(color, duration, level)(test)
     case group @ Test.Group(tests) =>
       val label = this.label(group)
-      if (group.success) success(label, color)
+      if (group.success) success(label, this.duration(duration, level), color)
       else {
-        val details = tests.map(this.test(color, level)).mkString(EOL)
-        error(label, message = None, color) + EOL + Text.padLeft(details, 2)
+        val details =
+          tests.map(this.test(color, duration, level + 1)).mkString(EOL)
+        error(label, message = None, this.duration(duration, level), color) + EOL + Text
+          .padLeft(details, 2)
       }
     case Test.Label(description, Test.Error(message)) =>
-      error(description, Some(message), color)
+      error(description, Some(message), this.duration(duration, level), color)
     case Test.Label(description, Test.Failure(throwable)) =>
-      failure(description, throwable, color)
+      failure(description, throwable, this.duration(duration, level), color)
     case Test.Label(description, group @ Test.Group(tests)) =>
-      if (group.success) success(description, color)
+      if (group.success) success(description, Some(duration), color)
       else {
-        val details = tests.map(this.test(color, level)).mkString(EOL)
-        error(description, message = None, color) + EOL + Text.padLeft(details,
-                                                                       2)
+        val details = tests.map(this.test(color, duration, level)).mkString(EOL)
+        error(description,
+              message = None,
+              this.duration(duration, level),
+              color) + EOL +
+          Text.padLeft(details, 2)
       }
     case Test.Label(description, Test.Label(_, test)) =>
-      this.test(color, level)(Test.Label(description, test))
-    case Test.Label(description, Test.Success(_)) => success(description, color)
+      this.test(color, duration, level)(Test.Label(description, test))
+    case Test.Label(description, Test.Success(_)) =>
+      success(description, Some(duration), color)
     case Test.Message(description, test) =>
       val details =
         if (test.success) Text.colorizeCond(description, Console.GREEN, color)
         else Text.colorizeCond(description, Console.RED, color)
-      this.test(color, level)(test) + EOL + Text.padLeft(details, level * 2)
+      this.test(color, duration, level)(test) + EOL + Text.padLeft(details,
+                                                                   level * 2)
     case Test.Skip(_)    => skip("skip", color)
-    case Test.Success(_) => success("success", color)
+    case Test.Success(_) => success("success", None, color)
     case test            => show"Unknown format: $test"
   }
 
+  def duration(value: Long, level: Int): Option[Long] =
+    if (level === 0) Some(value) else None
+
   def error(description: String,
             message: Option[String],
+            duration: Option[Long],
             color: Boolean): String = {
-    val value = s"✗ $description" +
+    val value = s"✗ $description" + duration.fold("")(" (" + _ + "ms)") +
       message.map(EOL + Text.padLeft(_, 2)).orEmpty
     Text.colorizeCond(value, Console.RED, color)
   }
 
   def failure(description: String,
               throwable: Throwable,
+              duration: Option[Long],
               color: Boolean): String = {
     val error = Formatter.throwable(throwable)
-    val value = s"⚡$description" + EOL + Text.padLeft(error, 2)
-    Text.colorizeCond(value, Console.RED, color)
+    val details = s"⚡$description" + duration.fold("")(" (" + _ + "ms)") + EOL + Text
+      .padLeft(error, 2)
+    Text.colorizeCond(details, Console.RED, color)
   }
 
   def skip(description: String, color: Boolean): String =
     Text.colorizeCond(s"~ $description", Console.YELLOW, color)
 
-  def success(description: String, color: Boolean): String =
-    Text.colorizeCond(s"✓ $description", Console.GREEN, color)
+  def success(description: String,
+              duration: Option[Long],
+              color: Boolean): String = {
+    val details = s"✓ $description" + duration.fold("")(" (" + _ + "ms)")
+    Text.colorizeCond(details, Console.GREEN, color)
+  }
 
   def throwable(throwable: Throwable): String =
     throwable.getMessage + EOL + throwable.getStackTrace.mkString("", EOL, EOL)

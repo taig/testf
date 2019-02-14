@@ -45,26 +45,42 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      test <- {
+      tests <- {
         implicit val contextShift: ContextShift[IO] = async
-        Async.liftIO(testF.suite.compile)
+
+        val tests = testF.suite.map { test =>
+          for {
+            start <- IO(System.currentTimeMillis())
+            value <- test.compile
+            end <- IO(System.currentTimeMillis())
+          } yield (end - start, value)
+        }
+
+        Async.liftIO(tests.parSequence)
       }
       _ <- lock.take
-      _ <- log[F](loggers, name, test)
+      _ <- log[F](loggers, name, tests)
       _ <- lock.put(true)
-      events = test.root.map(TestFEvent(task, _))
+      events = tests.map {
+        case (duration, test) => TestFEvent(task, duration, test)
+      }
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
   }
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      test: Test[Id, _]): F[Unit] =
+                      tests: List[(Long, Test[Id, _])]): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
+      val success = tests.map(_._2).forall(_.success)
       val title =
-        Text.colorize(name, if (test.success) Console.GREEN else Console.RED)
-      val message = Formatter.test(test, color)
-      Logging.print(logger, title) *> Logging.print(logger, message)
+        Text.colorize(name, if (success) Console.GREEN else Console.RED)
+      val messages = tests.map {
+        case (duration, test) => Formatter.test(test, duration, color)
+      }
+
+      Logging.print(logger, title) *> messages.traverse_(
+        Logging.print(logger, _))
     }
 }

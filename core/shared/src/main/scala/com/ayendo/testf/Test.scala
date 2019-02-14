@@ -20,11 +20,6 @@ sealed trait Test[F[_], +A] extends Product with Serializable {
     case success: Test.Success[F, A] => success.asInstanceOf[Test[G, A]]
   }
 
-  def root: List[Test[F, A]] = this match {
-    case Test.Group(tests) => tests
-    case test              => List(test)
-  }
-
   def success(implicit F: Monad[F]): F[Boolean] = this match {
     case Test.Defer(test)                => test.flatMap(_.success)
     case Test.Error(_) | Test.Failure(_) => false.pure[F]

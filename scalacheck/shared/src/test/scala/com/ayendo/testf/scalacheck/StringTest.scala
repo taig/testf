@@ -27,6 +27,6 @@ object StringTest extends TestF {
                    b)
     }
 
-  override val suite: Test[IO, Unit] =
-    (startsWith |+| concatenate |+| substring).mapK(Test.liftId)
+  override val suite: List[Test[IO, Unit]] =
+    List(startsWith |+| concatenate |+| substring).map(_.mapK(Test.liftId))
 }
