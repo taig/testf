@@ -3,7 +3,14 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
-  .aggregate(coreJVM, coreJS, scalacheckJVM, scalacheckJS, lawsJVM, lawsJS)
+  .aggregate(autoJVM,
+             autoJS,
+             coreJVM,
+             coreJS,
+             scalacheckJVM,
+             scalacheckJS,
+             lawsJVM,
+             lawsJS)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -33,6 +40,20 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 lazy val coreJVM = core.jvm
 
 lazy val coreJS = core.js
+
+lazy val auto = crossProject(JVMPlatform, JSPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .settings(myMavenRepoPublishSettings)
+  .settings(
+    name := "testf-auto",
+    testFrameworks += new TestFramework(
+      s"${organization.value}.testf.runner.TestFFramework")
+  )
+  .dependsOn(core)
+
+lazy val autoJVM = auto.jvm
+
+lazy val autoJS = auto.js
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
