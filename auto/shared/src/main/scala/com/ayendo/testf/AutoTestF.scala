@@ -40,22 +40,21 @@ private object AutoTestF {
       body: List[c.Tree]): c.Expr[List[Test[IO, Unit]]] = {
     import c.universe._
 
-    val target = typeOf[Test[Nothing, _]].typeSymbol
+    val test = typeOf[Test[Nothing, _]].typeSymbol
+    val unit = typeOf[Unit].typeSymbol
 
     val tests = body
       .collect { case field: ValOrDefDef if field.tpt.nonEmpty => field }
       .mapFilter { field =>
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
-        if (target == tpt.typeSymbol) Some((tpt.args.head, field.name))
-        else None
+        val f = tpt.args(0)
+        val a = tpt.args(1)
+        val valid = tpt.typeSymbol == test && a.typeSymbol == unit
+        if (valid) Some((f, field.name)) else None
 
       }
       .map { case (f, term) => q"com.ayendo.testf.LiftIO[$f].lift($term)" }
 
-    val result = q"""
-    List(..$tests)
-    """
-
-    c.Expr(result)
+    c.Expr(q"List(..$tests)")
   }
 }
