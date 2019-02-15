@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 0.0.3
+
+_2019-02-15_
+
+ * [#4] AutoTestF should maintain parents and ignore defs with arguments
+ * [#5] AutoTestF should only pick up Test[_, Unit]
+
 ## 0.0.2
 
 _2019-02-14_
