@@ -57,11 +57,8 @@ private object AutoTestF {
       }
       .mapFilter { field =>
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
-        val f = tpt.args(0)
-        val a = tpt.args(1)
-        val valid = tpt.typeSymbol == test && a.typeSymbol == unit
-        if (valid) Some((f, field.name)) else None
-
+        val valid = tpt.typeSymbol == test && tpt.args(1).typeSymbol == unit
+        if (valid) Some((tpt.args(0), field.name)) else None
       }
       .map { case (f, term) => q"com.ayendo.testf.LiftIO[$f].lift($term)" }
 
