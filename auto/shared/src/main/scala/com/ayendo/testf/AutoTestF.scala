@@ -21,9 +21,15 @@ private object AutoTestF {
     }
 
     val result = tree match {
-      case q"$mods object $name { $self => ..$body }" =>
+      case q"$mods object $name extends ..$parents { $self => ..$body }" =>
+        val head :: tail = parents
+        val parent = c.typecheck(q"??? : $head").tpe.asInstanceOf[TypeRef]
+
+        if (parent != typeOf[AnyRef])
+          c.abort(c.enclosingPosition, "Invalid parent class")
+
         q"""
-        $mods object $name extends com.ayendo.testf.TestF { $self =>
+        $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
           override val suite: List[com.ayendo.testf.Test[cats.effect.IO, Unit]] =
@@ -45,6 +51,10 @@ private object AutoTestF {
 
     val tests = body
       .collect { case field: ValOrDefDef if field.tpt.nonEmpty => field }
+      .filter {
+        case field: DefDef => field.tparams.isEmpty && field.vparamss.isEmpty
+        case _: ValDef     => true
+      }
       .mapFilter { field =>
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
         val f = tpt.args(0)
