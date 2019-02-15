@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.0.4
+
+_2019-02-15_
+
+ * Fix IndexOutOfBoundsException in AutoTestF on unrelated fields
+
 ## 0.0.3
 
 _2019-02-15_
