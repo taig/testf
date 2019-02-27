@@ -1,5 +1,7 @@
 package com.ayendo.testf.runner
 
+import java.io.{PrintWriter, StringWriter}
+
 import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
@@ -21,6 +23,7 @@ final class TestFTask(task: TaskDef,
                        loggers: Array[Logger]): Array[Task] = {
     TestFTask
       .execute[IO](task, classLoader, eventHandler, loggers.toList, lock, async)
+      .handleError(recover(loggers))
       .unsafeRunSync()
 
     Array.empty
@@ -31,7 +34,17 @@ final class TestFTask(task: TaskDef,
               continuation: Array[Task] => Unit): Unit =
     TestFTask
       .execute[IO](task, classLoader, eventHandler, loggers.toList, lock, async)
+      .handleError(recover(loggers))
       .unsafeRunAsync(_ => continuation(Array.empty))
+
+  def recover(loggers: Array[Logger])(throwable: Throwable): Unit =
+    loggers.foreach { logger =>
+      val writer = new StringWriter()
+      throwable.printStackTrace(new PrintWriter(writer))
+
+      logger.error(s"Failed to run test suite ${task.fullyQualifiedName()}")
+      logger.error(writer.toString)
+    }
 }
 
 object TestFTask {
