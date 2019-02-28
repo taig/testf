@@ -1,25 +1,24 @@
 package com.ayendo.testf.scalacheck
 
-import cats.Id
 import cats.effect.IO
 import cats.implicits._
 import com.ayendo.testf._
 import org.scalacheck.Gen
 
 object StringTest extends TestF {
-  val startsWith: Test[Id, Unit] =
+  val startsWith: Test =
     Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
       Test.cond("startsWith", (a + b).startsWith(a))
     }
 
-  val concatenate: Test[Id, Unit] =
+  val concatenate: Test =
     Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
       Test.label("concatenate",
-                 Test.cond[Id]("lengthA", (a + b).length >= a.length) |+|
-                   Test.cond[Id]("lengthB", (a + b).length >= b.length))
+                 Test.cond("lengthA", (a + b).length >= a.length) |+|
+                   Test.cond("lengthB", (a + b).length >= b.length))
     }
 
-  val substring: Test[Id, Unit] =
+  val substring: Test =
     Test.check3(Gen.alphaNumStr, Gen.alphaNumStr, Gen.alphaNumStr) {
       (a, b, c) =>
         Test.equal("substring",
@@ -27,6 +26,6 @@ object StringTest extends TestF {
                    b)
     }
 
-  override val suite: List[Test[IO, Unit]] =
-    List(startsWith |+| concatenate |+| substring).map(_.mapK(Test.liftId))
+  override val suite: List[IO[Test]] =
+    List(startsWith, concatenate, substring).map(IO.pure)
 }

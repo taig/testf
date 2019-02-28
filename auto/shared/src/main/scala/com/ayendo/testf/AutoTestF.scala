@@ -32,7 +32,7 @@ private object AutoTestF {
         $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
-          override val suite: List[com.ayendo.testf.Test[cats.effect.IO, Unit]] =
+          override val suite: List[cats.effect.IO[com.ayendo.testf.Test]] =
             ${filter(c)(body.toList)}
         }
         """
@@ -43,11 +43,10 @@ private object AutoTestF {
   }
 
   def filter(c: blackbox.Context)(
-      body: List[c.Tree]): c.Expr[List[Test[IO, Unit]]] = {
+      body: List[c.Tree]): c.Expr[List[IO[Test]]] = {
     import c.universe._
 
-    val test = typeOf[Test[Nothing, _]].typeSymbol
-    val unit = typeOf[Unit].typeSymbol
+    val test = typeOf[Test].typeSymbol
 
     val tests = body
       .collect { case field: ValOrDefDef if field.tpt.nonEmpty => field }
@@ -57,8 +56,12 @@ private object AutoTestF {
       }
       .mapFilter { field =>
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
-        val valid = tpt.typeSymbol == test && tpt.args(1).typeSymbol == unit
-        if (valid) Some((tpt.args(0), field.name)) else None
+        if (tpt.typeSymbol == test) {
+          Some((tq"cats.Id", field.name))
+        } else if (tpt.args.length == 1 && tpt.args(0).typeSymbol == test) {
+          val tq"$name[$_]" = field.tpt
+          Some((name, field.name))
+        } else None
       }
       .map { case (f, term) => q"com.ayendo.testf.LiftIO[$f].lift($term)" }
 

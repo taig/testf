@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 
 @EnableReflectiveInstantiation
 abstract class TestF {
-  def suite: List[Test[IO, Unit]]
+  def suite: List[IO[Test]]
 
   implicit val contextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

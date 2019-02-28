@@ -1,6 +1,5 @@
 package com.ayendo.testf.laws
 
-import cats.Id
 import cats.implicits._
 import com.ayendo.testf._
 import org.scalacheck.cats.implicits._
@@ -13,23 +12,20 @@ object Generators {
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
 
-  implicit def arbitraryTest[A: Arbitrary]: Arbitrary[Test[Id, A]] = {
-    val error = (description, summon[String]).mapN(Test.error[Id])
+  implicit def arbitraryTest: Arbitrary[Test] = {
+    val error = (description, summon[String]).mapN(Test.error)
 
-    val failure = (description, summon[Throwable]).mapN(Test.failure[Id])
+    val failure = (description, summon[Throwable]).mapN(Test.failure)
 
-    val group =
-      Gen.lzy((summon[Test[Id, A]], summon[Test[Id, A]]).mapN(_ |+| _))
+    val group = Gen.lzy((summon[Test], summon[Test]).mapN(_ |+| _))
 
-    val label =
-      Gen.lzy((description, summon[Test[Id, A]]).mapN(Test.label[Id, A]))
+    val label = Gen.lzy((description, summon[Test]).mapN(Test.label))
 
-    val message =
-      Gen.lzy((description, summon[Test[Id, A]]).mapN(Test.message[Id, A]))
+    val message = Gen.lzy((description, summon[Test]).mapN(Test.message))
 
-    val skip = Gen.lzy(summon[Test[Id, A]].map(Test.skip[Id, A]))
+    val skip = Gen.lzy(summon[Test]).map(Test.skip)
 
-    val success = (description, summon[A]).mapN(Test.success[Id, A])
+    val success = description.map(Test.success(_))
 
     val generator =
       Gen.oneOf(error, failure, group, label, message, skip, success)
@@ -37,15 +33,14 @@ object Generators {
     Arbitrary(generator)
   }
 
-  implicit def cogenTest[A]: Cogen[Test[Id, A]] =
+  implicit def cogenTest[A]: Cogen[Test] =
     Cogen({
-      case Test.Defer(_)      => 0
       case Test.Error(_)      => 1
       case Test.Failure(_)    => 2
       case Test.Group(_)      => 3
       case Test.Label(_, _)   => 4
       case Test.Message(_, _) => 5
       case Test.Skip(_)       => 6
-      case Test.Success(_)    => 7
-    }: Test[Id, A] => Long)
+      case Test.Success       => 7
+    }: Test => Long)
 }

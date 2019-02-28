@@ -2,33 +2,33 @@ package com.ayendo.testf
 
 import java.net.{HttpURLConnection, URL}
 
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits._
 
 object WebsiteStatusTest extends TestF {
-  def request(url: String): IO[Int] = IO(new URL(url)).flatMap { url =>
-    IO(url.openConnection().asInstanceOf[HttpURLConnection])
-      .bracket { connection =>
-        IO(connection.getResponseCode)
-      } { connection =>
-        IO(connection.disconnect())
-      }
-  }
+  def request[F[_]](url: String)(implicit F: Sync[F]): F[Int] =
+    F.delay(new URL(url)).flatMap { url =>
+      val open = F.delay(url.openConnection().asInstanceOf[HttpURLConnection])
+      val load =
+        (connection: HttpURLConnection) => F.delay(connection.getResponseCode)
+      val disconnect =
+        (connection: HttpURLConnection) => F.delay(connection.disconnect())
+      F.bracket(open)(load)(disconnect)
+    }
 
-  val typelevel: Test[IO, Unit] =
-    Test
-      .liftF("typelevel", request("https://typelevel.org/"))
-      .flatMap(Test.equal(_, 200))
+  def typelevel[F[_]: Sync]: F[Test] =
+    Test.labelF("typelevel",
+                request[F]("https://typelevel.org/").map(Test.equal(_, 200)))
 
-  val scalaLang: Test[IO, Unit] =
-    Test
-      .liftF("scala-lang", request("https://www.scala-lang.org/"))
-      .flatMap(Test.equal(_, 200))
+  def scalaLang[F[_]: Sync]: F[Test] =
+    Test.labelF(
+      "scala",
+      request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200)))
 
-  val github: Test[IO, Unit] =
-    Test
-      .liftF("github", request("https://github.com/"))
-      .flatMap(Test.equal(_, 200))
+  def github[F[_]: Sync]: F[Test] =
+    Test.labelF("github",
+                request[F]("https://github.com/").map(Test.equal(_, 200)))
 
-  override val suite: List[Test[IO, Unit]] = List(typelevel, scalaLang, github)
+  override val suite: List[IO[Test]] =
+    List(typelevel[IO], scalaLang[IO], github[IO])
 }

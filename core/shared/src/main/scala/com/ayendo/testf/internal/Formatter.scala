@@ -1,14 +1,12 @@
 package com.ayendo.testf.internal
 
-import cats.Id
 import cats.implicits._
 import com.ayendo.testf.Test
 
 import scala.compat.Platform.EOL
 
 object Formatter {
-  val label: Test[Id, _] => String = {
-    case Test.Defer(test)      => label(test)
+  val label: Test => String = {
     case Test.Error(_)         => "error"
     case Test.Failure(_)       => "failure"
     case Test.Label(label, _)  => label
@@ -19,17 +17,14 @@ object Formatter {
         case head :: Nil  => head
         case head :: tail => tail.foldLeft(head)(_ + " |+| " + _)
       }
-    case Test.Skip(_)    => "skip"
-    case Test.Success(_) => "success"
+    case Test.Skip(_) => "skip"
+    case Test.Success => "success"
   }
 
-  def test[A](value: Test[Id, A], duration: Long, color: Boolean): String =
+  def test(value: Test, duration: Long, color: Boolean): String =
     this.test(color, duration, level = 0)(value)
 
-  def test[A](color: Boolean,
-              duration: Long,
-              level: Int): Test[Id, A] => String = {
-    case Test.Defer(test) => this.test(color, duration, level)(test)
+  def test(color: Boolean, duration: Long, level: Int): Test => String = {
     case group @ Test.Group(tests) =>
       val label = this.label(group)
       if (group.success) success(label, this.duration(duration, level), color)
@@ -55,7 +50,7 @@ object Formatter {
       }
     case Test.Label(description, Test.Label(_, test)) =>
       this.test(color, duration, level)(Test.Label(description, test))
-    case Test.Label(description, Test.Success(_)) =>
+    case Test.Label(description, Test.Success) =>
       success(description, Some(duration), color)
     case Test.Message(description, test) =>
       val details =
@@ -63,9 +58,9 @@ object Formatter {
         else Text.colorizeCond(description, Console.RED, color)
       this.test(color, duration, level)(test) + EOL + Text.padLeft(details,
                                                                    level * 2)
-    case Test.Skip(_)    => skip("skip", color)
-    case Test.Success(_) => success("success", None, color)
-    case test            => show"Unknown format: $test"
+    case Test.Skip(_) => skip("skip", color)
+    case Test.Success => success("success", None, color)
+    case test         => show"Unknown format: $test"
   }
 
   def duration(value: Long, level: Int): Option[Long] =
