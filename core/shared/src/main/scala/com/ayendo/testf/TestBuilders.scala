@@ -5,17 +5,17 @@ import cats.implicits._
 
 trait TestBuilders {
   def cond(predicate: Boolean): Test =
-    if (predicate) this.success else this.error("false")
+    if (predicate) success else error("false")
 
   def cond(description: String, predicate: Boolean): Test =
-    this.label(description, this.cond(predicate))
+    label(description, cond(predicate))
 
   def equal[A: Eq: Show](actual: A, expected: A): Test =
-    if (actual === expected) this.success
-    else this.error(show"$actual does not match expected $expected")
+    if (actual === expected) success
+    else error(show"$actual does not match expected $expected")
 
   def equal[A: Eq: Show](description: String, actual: A, expected: A): Test =
-    this.label(description, this.equal(actual, expected))
+    label(description, equal(actual, expected))
 
   def group(tests: Test*): Test = Test.Group(tests.toList)
 
@@ -36,17 +36,17 @@ trait TestBuilders {
 
   val success: Test = Test.Success
 
-  def success(description: String): Test = this.label(description, this.success)
+  def success(description: String): Test = label(description, success)
 
   def error(message: String): Test = Test.Error(message)
 
   def error(description: String, message: String): Test =
-    this.label(description, this.error(message))
+    label(description, error(message))
 
   def failure(throwable: Throwable): Test = Test.Failure(throwable)
 
   def failure(description: String, throwable: Throwable): Test =
-    this.label(description, Test.failure(throwable))
+    label(description, Test.failure(throwable))
 
   def skip(test: Test): Test = Test.Skip(test)
 }
