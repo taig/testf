@@ -22,8 +22,14 @@ trait TestBuilders {
   def label(description: String, test: Test): Test =
     Test.Label(description, test)
 
-  def labelF[F[_]: Functor](description: String, test: F[Test]): F[Test] =
-    test.map(this.label(description, _))
+  def labelF[F[_]: ApplicativeError[?[_], Throwable]](description: String,
+                                                      test: F[Test]): F[Test] =
+    test
+      .map(Test.label(description, _))
+      .handleError(Test.failure(description, _))
+
+  def liftF[F[_]: Functor, A](value: F[A])(test: A => Test): F[Test] =
+    value.map(test)
 
   def message(description: String, test: Test): Test =
     Test.Message(description, test)
@@ -37,8 +43,10 @@ trait TestBuilders {
   def error(description: String, message: String): Test =
     this.label(description, this.error(message))
 
+  def failure(throwable: Throwable): Test = Test.Failure(throwable)
+
   def failure(description: String, throwable: Throwable): Test =
-    this.label(description, Test.Failure(throwable))
+    this.label(description, Test.failure(throwable))
 
   def skip(test: Test): Test = Test.Skip(test)
 }

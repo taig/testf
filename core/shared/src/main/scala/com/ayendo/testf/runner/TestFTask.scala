@@ -63,7 +63,7 @@ object TestFTask {
         val tests = testF.suite.map { test =>
           for {
             start <- IO(System.currentTimeMillis())
-            value <- test
+            value <- test.handleError(Test.failure)
             end <- IO(System.currentTimeMillis())
           } yield (end - start, value)
         }
