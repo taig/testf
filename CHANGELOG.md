@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 0.0.5
+
+_2019-02-28_
+
+ * Major simplification by removing F[_] from the Test ADT
+ * Improve handling of failures in F
+ * Properly handle and report test suite initialization errors
+
 ## 0.0.4
 
 _2019-02-15_
