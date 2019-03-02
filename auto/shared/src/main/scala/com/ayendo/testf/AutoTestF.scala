@@ -7,13 +7,21 @@ import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-abstract class AutoTestF extends StaticAnnotation {
+abstract class AutoTestF(label: Boolean = true) extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro AutoTestF.apply
 }
 
 private object AutoTestF {
   def apply(c: blackbox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
+
+    val label = c.prefix.tree match {
+      case q"new ${_}(label = $label)" =>
+        c.eval[Boolean](c.Expr(label))
+      case q"new ${_}($label)" =>
+        c.eval[Boolean](c.Expr(label))
+      case q"new ${_}" => true
+    }
 
     val tree = annottees match {
       case head :: Nil => head.tree
@@ -33,7 +41,7 @@ private object AutoTestF {
           ..$body
 
           override val suite: List[cats.effect.IO[com.ayendo.testf.Test]] =
-            ${filter(c)(body.toList)}
+            ${filter(c)(body.toList, label)}
         }
         """
       case _ => c.abort(c.enclosingPosition, "Only object allowed")
@@ -42,8 +50,8 @@ private object AutoTestF {
     c.Expr(result)
   }
 
-  def filter(c: blackbox.Context)(
-      body: List[c.Tree]): c.Expr[List[IO[Test]]] = {
+  def filter(c: blackbox.Context)(body: List[c.Tree],
+                                  label: Boolean): c.Expr[List[IO[Test]]] = {
     import c.universe._
 
     val test = typeOf[Test].typeSymbol
@@ -57,14 +65,26 @@ private object AutoTestF {
       .mapFilter { field =>
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
         if (tpt.typeSymbol == test) {
-          Some((tq"cats.Id", field.name))
+          val test = if (label) autoLabel(c)(field.name) else q"${field.name}"
+          Some((tq"cats.Id", test))
         } else if (tpt.args.length == 1 && tpt.args(0).typeSymbol == test) {
           val tq"$name[$_]" = field.tpt
-          Some((name, field.name))
+          val test = if (label) autoLabelF(c)(field.name) else q"${field.name}"
+          Some((name, test))
         } else None
       }
-      .map { case (f, term) => q"com.ayendo.testf.LiftIO[$f].lift($term)" }
+      .map { case (f, test) => q"com.ayendo.testf.LiftIO[$f].lift($test)" }
 
     c.Expr(q"List(..$tests)")
+  }
+
+  def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
+    import c.universe._
+    q"com.ayendo.testf.Test.prefix(${term.decodedName.toString}, $term)"
+  }
+
+  def autoLabelF(c: blackbox.Context)(term: c.TermName): c.Tree = {
+    import c.universe._
+    q"com.ayendo.testf.Test.prefixF(${term.decodedName.toString}, $term)"
   }
 }

@@ -16,11 +16,26 @@ trait TestBuilders {
   def label(description: String, test: Test): Test =
     Test.Label(description, test)
 
-  def labelF[F[_]: ApplicativeError[?[_], Throwable]](description: String,
-                                                      test: F[Test]): F[Test] =
+  def prefix(description: String, test: Test): Test =
+    test match {
+      case test: Test.Label => test
+      case test             => label(description, test)
+    }
+
+  def labelF[F[_]](description: String, test: F[Test])(
+      implicit F: ApplicativeError[F, Throwable]): F[Test] =
     test
       .map(Test.label(description, _))
-      .handleError(throwable => label(description, Test.failure(throwable)))
+      .handleError(throwable => label(description, failure(throwable)))
+
+  def prefixF[F[_]](description: String, test: F[Test])(
+      implicit F: ApplicativeError[F, Throwable]): F[Test] =
+    test
+      .map {
+        case test: Test.Label => test
+        case test             => label(description, test)
+      }
+      .handleError(throwable => label(description, failure(throwable)))
 
   def liftF[F[_]: Functor, A](value: F[A])(test: A => Test): F[Test] =
     value.map(test)
