@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.0.6
+
+_2019-03-02_
+
+ * Remove overloaded builders and add `@@` helper for labels
+
 ## 0.0.5
 
 _2019-02-28_
