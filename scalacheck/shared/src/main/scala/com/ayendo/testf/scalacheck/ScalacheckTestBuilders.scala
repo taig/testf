@@ -1,24 +1,20 @@
 package com.ayendo.testf.scalacheck
 
 import com.ayendo.testf._
-import com.ayendo.testf.implicits._
 import org.scalacheck.Prop
 import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
 
 trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
-  def check(description: String,
-            prop: Prop,
-            parameters: Parameters = Parameters.default): Test = {
+  def check(prop: Prop, parameters: Parameters = Parameters.default): Test = {
     val result = org.scalacheck.Test.check(parameters, prop)
-
-    if (result.passed) Test.success(description)
-    else description @@ Test.error(Pretty.pretty(result, Pretty.Params(2)))
+    if (result.passed) Test.success
+    else Test.error(Pretty.pretty(result, Pretty.Params(2)))
   }
 }
 
-object ScalacheckTestBuilders {
-  private[scalacheck] def check(
+object ScalacheckTestBuilders extends ScalacheckTestBuilders {
+  private[scalacheck] def checkTest(
       prop: (Test => Prop) => Prop,
       parameters: Parameters = Parameters.default): Test = {
     var test: Test = null

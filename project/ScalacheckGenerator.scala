@@ -38,7 +38,7 @@ object ScalacheckGenerator {
        |    implicit
        |    ${implicits(length)}
        |  ): Test =
-       |    ScalacheckTestBuilders.check(Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
+       |    ScalacheckTestBuilders.checkTest(Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
          length)}))
      """.stripMargin
   }
