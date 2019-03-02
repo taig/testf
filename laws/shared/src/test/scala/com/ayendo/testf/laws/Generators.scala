@@ -2,6 +2,7 @@ package com.ayendo.testf.laws
 
 import cats.implicits._
 import com.ayendo.testf._
+import com.ayendo.testf.implicits._
 import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
@@ -12,10 +13,10 @@ object Generators {
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
 
-  implicit def arbitraryTest: Arbitrary[Test] = {
-    val error = (description, summon[String]).mapN(Test.error)
+  implicit val arbitraryTest: Arbitrary[Test] = {
+    val error = (description, summon[String]).mapN(_ @@ Test.error(_))
 
-    val failure = (description, summon[Throwable]).mapN(Test.failure)
+    val failure = (description, summon[Throwable]).mapN(_ @@ Test.failure(_))
 
     val group = Gen.lzy((summon[Test], summon[Test]).mapN(_ |+| _))
 
@@ -33,14 +34,18 @@ object Generators {
     Arbitrary(generator)
   }
 
-  implicit def cogenTest[A]: Cogen[Test] =
-    Cogen({
-      case Test.Error(_)      => 1
-      case Test.Failure(_)    => 2
-      case Test.Group(_)      => 3
-      case Test.Label(_, _)   => 4
-      case Test.Message(_, _) => 5
-      case Test.Skip(_)       => 6
-      case Test.Success       => 7
-    }: Test => Long)
+  implicit val cogenTest: Cogen[Test] =
+    Cogen { (seed, test) =>
+      test match {
+        case Test.Error(message)     => Cogen.perturb(seed, message)
+        case Test.Failure(throwable) => Cogen.perturb(seed, throwable)
+        case Test.Group(tests)       => Cogen.perturb(seed, tests)
+        case Test.Label(description, test) =>
+          Cogen.perturb(seed, (description, test))
+        case Test.Message(description, test) =>
+          Cogen.perturb(seed, (description, test))
+        case Test.Skip(test) => Cogen.perturb(seed, test)
+        case Test.Success    => seed
+      }
+    }
 }

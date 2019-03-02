@@ -4,6 +4,7 @@ import java.net.{HttpURLConnection, URL}
 
 import cats.effect.{IO, Sync}
 import cats.implicits._
+import com.ayendo.testf.implicits._
 
 object WebsiteStatusTest extends TestF {
   def request[F[_]](url: String)(implicit F: Sync[F]): F[Int] =
@@ -17,17 +18,13 @@ object WebsiteStatusTest extends TestF {
     }
 
   def typelevel[F[_]: Sync]: F[Test] =
-    Test.labelF("typelevel",
-                request[F]("https://typelevel.org/").map(Test.equal(_, 200)))
+    "typelevel" @@ request[F]("https://typelevel.org/").map(Test.equal(_, 200))
 
   def scalaLang[F[_]: Sync]: F[Test] =
-    Test.labelF(
-      "scala",
-      request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200)))
+    "scala" @@ request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200))
 
   def github[F[_]: Sync]: F[Test] =
-    Test.labelF("github",
-                request[F]("https://github.com/").map(Test.equal(_, 200)))
+    "github" @@ request[F]("https://github.com/").map(Test.equal(_, 200))
 
   override val suite: List[IO[Test]] =
     List(typelevel[IO], scalaLang[IO], github[IO])

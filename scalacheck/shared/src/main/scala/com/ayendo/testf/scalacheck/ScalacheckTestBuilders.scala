@@ -1,6 +1,7 @@
 package com.ayendo.testf.scalacheck
 
 import com.ayendo.testf._
+import com.ayendo.testf.implicits._
 import org.scalacheck.Prop
 import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
@@ -12,7 +13,7 @@ trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
     val result = org.scalacheck.Test.check(parameters, prop)
 
     if (result.passed) Test.success(description)
-    else Test.error(description, Pretty.pretty(result, Pretty.Params(2)))
+    else description @@ Test.error(Pretty.pretty(result, Pretty.Params(2)))
   }
 }
 

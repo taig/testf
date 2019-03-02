@@ -3,16 +3,16 @@ package com.ayendo.testf
 import cats.effect.IO
 import cats.implicits._
 import com.ayendo.testf.internal.{Formatter, Text}
+import com.ayendo.testf.implicits._
 import sourcecode.Name
 
 object TestTest extends TestF {
   def showTest(test: Test, expected: String)(implicit name: Name): Test =
-    Test.equal(name.value,
-               Formatter.test(test, duration = 0, color = false),
-               expected)
+    name.value @@ Test.equal(Formatter.test(test, duration = 0, color = false),
+                             expected)
 
   val showError: Test =
-    showTest(Test.error("error", "reason"),
+    showTest("error" @@ Test.error("reason"),
              """✗ error (0ms)
                |  reason""".stripMargin)
 
@@ -21,7 +21,7 @@ object TestTest extends TestF {
 
     val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
 
-    showTest(Test.failure("failure", exception),
+    showTest("failure" @@ Test.failure(exception),
              s"""⚡failure (0ms)
                 |$details""".stripMargin)
   }
