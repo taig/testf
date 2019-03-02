@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 0.0.7
+
+_2019-03-02_
+
+ * Remove naming parameters from laws and checkers to favor labels instead
+ * Automatically generate test labels in @AutoTestF
+
 ## 0.0.6
 
 _2019-03-02_
