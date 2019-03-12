@@ -11,8 +11,7 @@ import sbt.testing._
 
 final class TestFTask(task: TaskDef,
                       classLoader: ClassLoader,
-                      lock: MVar[IO, Boolean],
-                      async: ContextShift[IO])
+                      lock: MVar[IO, Boolean])
     extends Task {
   override def tags(): Array[String] = Array.empty
 
@@ -21,7 +20,7 @@ final class TestFTask(task: TaskDef,
   override def execute(eventHandler: EventHandler,
                        loggers: Array[Logger]): Array[Task] = {
     TestFTask
-      .execute[IO](task, classLoader, eventHandler, loggers.toList, lock, async)
+      .execute[IO](task, classLoader, eventHandler, loggers.toList, lock)
       .handleError(recover(loggers))
       .unsafeRunSync()
 
@@ -32,7 +31,7 @@ final class TestFTask(task: TaskDef,
               loggers: Array[Logger],
               continuation: Array[Task] => Unit): Unit =
     TestFTask
-      .execute[IO](task, classLoader, eventHandler, loggers.toList, lock, async)
+      .execute[IO](task, classLoader, eventHandler, loggers.toList, lock)
       .handleError(recover(loggers))
       .unsafeRunAsync(_ => continuation(Array.empty))
 
@@ -51,14 +50,13 @@ object TestFTask {
                     classLoader: ClassLoader,
                     eventHandler: EventHandler,
                     loggers: List[Logger],
-                    lock: MVar[F, Boolean],
-                    async: ContextShift[IO])(implicit F: Async[F]): F[Unit] = {
+                    lock: MVar[F, Boolean])(implicit F: Async[F]): F[Unit] = {
     for {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
       tests <- {
-        implicit val contextShift: ContextShift[IO] = async
+        import testF.contextShift
 
         val tests = testF.suite.map { test =>
           for {

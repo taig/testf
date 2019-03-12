@@ -1,6 +1,5 @@
 package com.ayendo.testf
 
-import cats.Parallel
 import cats.effect.{ContextShift, IO}
 import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
 
@@ -10,8 +9,10 @@ import scala.concurrent.ExecutionContext
 abstract class TestF {
   def suite: List[IO[Test]]
 
-  implicit val contextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
+  implicit lazy val contextShift: ContextShift[IO] = TestF.defaultContextShift
+}
 
-  implicit val parallel: Parallel[IO, IO.Par] = IO.ioParallel
+object TestF {
+  implicit val defaultContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
 }

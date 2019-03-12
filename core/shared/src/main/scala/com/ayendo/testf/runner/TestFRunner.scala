@@ -13,7 +13,7 @@ final case class TestFRunner(args: Array[String],
   override def done(): String = ""
 
   override def tasks(list: Array[TaskDef]): Array[Task] =
-    list.map(task => new TestFTask(task, classLoader, lock, async))
+    list.map(task => new TestFTask(task, classLoader, lock))
 
   def receiveMessage(msg: String): Option[String] = None
 
@@ -21,6 +21,6 @@ final case class TestFRunner(args: Array[String],
     serializer(task.taskDef())
 
   def deserializeTask(task: String, deserializer: String => TaskDef): Task =
-    new TestFTask(deserializer(task), classLoader, lock, async)
+    new TestFTask(deserializer(task), classLoader, lock)
 
 }
