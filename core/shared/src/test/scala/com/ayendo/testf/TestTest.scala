@@ -61,7 +61,7 @@ object TestTest extends TestF {
     showTest(test, "✓ group (0ms)")
   }
 
-  override val suite: List[IO[Test]] =
+  override val suite: IO[List[IO[Test]]] =
     List(
       showError,
       showFailure,
@@ -71,5 +71,5 @@ object TestTest extends TestF {
       showGroupNestedWithoutLabelSuccess,
       showGroupNestedWithRepeatedLabelSuccess,
       showGroupNestedWithLabelSuccess
-    ).map(IO.pure)
+    ).map(IO.pure).pure[IO]
 }

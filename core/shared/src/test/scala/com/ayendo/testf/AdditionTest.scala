@@ -9,6 +9,6 @@ object AdditionTest extends TestF {
 
   val zeroPlusZero: Test = "zeroPlusZero" @@ Test.equal(0 + 0, 0)
 
-  override val suite: List[IO[Test]] =
-    List(onePlusOne, zeroPlusZero).map(IO.pure)
+  override val suite: IO[List[IO[Test]]] =
+    IO.pure(List(onePlusOne, zeroPlusZero).map(IO.pure))
 }

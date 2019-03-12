@@ -55,10 +55,11 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
+      suite <- Async.liftIO(testF.suite)
       tests <- {
         import testF.contextShift
 
-        val tests = testF.suite.map { test =>
+        val tests = suite.map { test =>
           for {
             start <- IO(System.currentTimeMillis())
             value <- test.handleError(Test.failure)

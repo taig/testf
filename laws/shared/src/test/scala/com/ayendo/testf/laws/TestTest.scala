@@ -13,5 +13,6 @@ object TestTest extends TestF {
   val semigroup: Test = "SemigroupLaws" @@ Test.verify(
     SemigroupTests[Test].semigroup)
 
-  override val suite: List[IO[Test]] = List(eq, semigroup).map(IO.pure)
+  override val suite: IO[List[IO[Test]]] =
+    IO.pure(List(eq, semigroup).map(IO.pure))
 }

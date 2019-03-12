@@ -26,6 +26,6 @@ object WebsiteStatusTest extends TestF {
   def github[F[_]: Sync]: F[Test] =
     "github" @@ request[F]("https://github.com/").map(Test.equal(_, 200))
 
-  override val suite: List[IO[Test]] =
-    List(typelevel[IO], scalaLang[IO], github[IO])
+  override val suite: IO[List[IO[Test]]] =
+    IO.pure(List(typelevel[IO], scalaLang[IO], github[IO]))
 }

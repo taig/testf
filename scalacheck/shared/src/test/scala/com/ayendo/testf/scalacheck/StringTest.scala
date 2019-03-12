@@ -25,6 +25,6 @@ object StringTest extends TestF {
       Test.equal((a + b + c).substring(a.length, a.length + b.length), b)
     }
 
-  override val suite: List[IO[Test]] =
-    List(startsWith, concatenate, substring).map(IO.pure)
+  override val suite: IO[List[IO[Test]]] =
+    IO.pure(List(startsWith, concatenate, substring).map(IO.pure))
 }

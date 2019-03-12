@@ -40,8 +40,8 @@ private object AutoTestF {
         $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
-          override val suite: List[cats.effect.IO[com.ayendo.testf.Test]] =
-            ${filter(c)(body.toList, label)}
+          override val suite: cats.effect.IO[List[cats.effect.IO[com.ayendo.testf.Test]]] =
+            cats.effect.IO.pure(${filter(c)(body.toList, label)})
         }
         """
       case _ => c.abort(c.enclosingPosition, "Only object allowed")
