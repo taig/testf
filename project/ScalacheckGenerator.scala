@@ -33,11 +33,11 @@ object ScalacheckGenerator {
   def check(length: Int): String = {
     s"""
        |  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters = Parameters.default)(
-       |    f: (${types(length)}) => Test
+       |    f: (${types(length)}) => Test[cats.Id]
        |  )(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test =
+       |  ): Test[cats.Id] =
        |    ScalacheckTestBuilders.checkTest(Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
          length)}))
      """.stripMargin

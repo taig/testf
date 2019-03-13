@@ -5,11 +5,10 @@ import cats.effect.IO
 
 @AutoTestF
 object AutoTestFTest {
-  val valTest: Test = Test.success
+  val valTest: Test[Id] = Test.success
 
-  def defTest: Test = Test.success("val")
+  def defTest: Test[Id] = Test.success("val")
 
-  val idTest: Id[Test] = valTest
-
-  val ioTest: IO[Test] = Test.labelF("IO val", IO.pure(valTest))
+  val ioTest: Test[IO] =
+    Test.label("IO val", Test.defer[IO](IO.pure(Test.success)))
 }

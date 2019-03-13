@@ -2,6 +2,7 @@ package com.ayendo.testf.runner
 
 import java.io.{PrintWriter, StringWriter}
 
+import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
@@ -59,7 +60,7 @@ object TestFTask {
       tests <- {
         import testF.contextShift
 
-        val tests = suite.map { test =>
+        val tests = Test.root(suite).map(_.compile).map { test =>
           for {
             start <- IO(System.currentTimeMillis())
             value <- test.handleError(Test.failure)
@@ -81,7 +82,7 @@ object TestFTask {
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      tests: List[(Long, Test)]): F[Unit] =
+                      tests: List[(Long, Test[Id])]): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val success = tests.map(_._2).forall(_.success)

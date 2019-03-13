@@ -40,7 +40,7 @@ private object AutoTestF {
         $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
-          override val suite: cats.effect.IO[List[cats.effect.IO[com.ayendo.testf.Test]]] =
+          override val suite: cats.effect.IO[com.ayendo.testf.Test[cats.effect.IO]] =
             cats.effect.IO.pure(${filter(c)(body.toList, label)})
         }
         """
@@ -51,10 +51,10 @@ private object AutoTestF {
   }
 
   def filter(c: blackbox.Context)(body: List[c.Tree],
-                                  label: Boolean): c.Expr[List[IO[Test]]] = {
+                                  label: Boolean): c.Expr[IO[Test[IO]]] = {
     import c.universe._
 
-    val test = typeOf[Test].typeSymbol
+    val test = typeOf[Test[IO]].typeSymbol
 
     val tests = body
       .collect { case field: ValOrDefDef if field.tpt.nonEmpty => field }
@@ -66,25 +66,17 @@ private object AutoTestF {
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
         if (tpt.typeSymbol == test) {
           val test = if (label) autoLabel(c)(field.name) else q"${field.name}"
-          Some((tq"cats.Id", test))
-        } else if (tpt.args.length == 1 && tpt.args(0).typeSymbol == test) {
-          val tq"$name[$_]" = field.tpt
-          val test = if (label) autoLabelF(c)(field.name) else q"${field.name}"
-          Some((name, test))
+          val tq"$name[$f]" = field.tpt
+          Some((f, test))
         } else None
       }
       .map { case (f, test) => q"com.ayendo.testf.LiftIO[$f].lift($test)" }
 
-    c.Expr(q"List(..$tests)")
+    c.Expr(q"Test.group(..$tests)")
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
     import c.universe._
     q"com.ayendo.testf.Test.prefix(${term.decodedName.toString}, $term)"
-  }
-
-  def autoLabelF(c: blackbox.Context)(term: c.TermName): c.Tree = {
-    import c.universe._
-    q"com.ayendo.testf.Test.prefixF(${term.decodedName.toString}, $term)"
   }
 }

@@ -1,12 +1,14 @@
 package com.ayendo.testf.scalacheck
 
+import cats.Id
 import com.ayendo.testf._
 import org.scalacheck.Prop
 import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
 
 trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
-  def check(prop: Prop, parameters: Parameters = Parameters.default): Test = {
+  def check(prop: Prop,
+            parameters: Parameters = Parameters.default): Test[Id] = {
     val result = org.scalacheck.Test.check(parameters, prop)
     if (result.passed) Test.success
     else Test.error(Pretty.pretty(result, Pretty.Params(2)))
@@ -15,11 +17,11 @@ trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
 
 object ScalacheckTestBuilders extends ScalacheckTestBuilders {
   private[scalacheck] def checkTest(
-      prop: (Test => Prop) => Prop,
-      parameters: Parameters = Parameters.default): Test = {
-    var test: Test = null
+      prop: (Test[Id] => Prop) => Prop,
+      parameters: Parameters = Parameters.default): Test[Id] = {
+    var test: Test[Id] = null
 
-    val p: Test => Prop = { x =>
+    val p: Test[Id] => Prop = { x =>
       test = x
       Prop(test.success)
     }

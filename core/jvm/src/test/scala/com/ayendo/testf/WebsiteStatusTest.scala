@@ -17,15 +17,18 @@ object WebsiteStatusTest extends TestF {
       F.bracket(open)(load)(disconnect)
     }
 
-  def typelevel[F[_]: Sync]: F[Test] =
-    "typelevel" @@ request[F]("https://typelevel.org/").map(Test.equal(_, 200))
+  def typelevel[F[_]: Sync]: Test[F] =
+    "typelevel" @@ Test.defer(
+      request[F]("https://typelevel.org/").map(Test.equal(_, 200)))
 
-  def scalaLang[F[_]: Sync]: F[Test] =
-    "scala" @@ request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200))
+  def scalaLang[F[_]: Sync]: Test[F] =
+    "scala" @@ Test.defer(
+      request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200)))
 
-  def github[F[_]: Sync]: F[Test] =
-    "github" @@ request[F]("https://github.com/").map(Test.equal(_, 200))
+  def github[F[_]: Sync]: Test[F] =
+    "github" @@ Test.defer(
+      request[F]("https://github.com/").map(Test.equal(_, 200)))
 
-  override val suite: IO[List[IO[Test]]] =
-    IO.pure(List(typelevel[IO], scalaLang[IO], github[IO]))
+  override val suite: IO[Test[IO]] =
+    IO.pure(Test.group(typelevel[IO], scalaLang[IO], github[IO]))
 }

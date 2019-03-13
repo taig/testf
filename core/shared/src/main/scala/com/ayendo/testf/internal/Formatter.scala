@@ -1,16 +1,18 @@
 package com.ayendo.testf.internal
 
+import cats.Id
 import cats.implicits._
 import com.ayendo.testf.Test
 
 import scala.compat.Platform.EOL
 
 object Formatter {
-  val label: Test => String = {
-    case Test.Error(_)         => "error"
-    case Test.Failure(_)       => "failure"
-    case Test.Label(label, _)  => label
-    case Test.Message(_, test) => label(test)
+  val label: Test[Id] => String = {
+    case Test.Defer(test)           => label(test)
+    case Test.Error(_)              => "error"
+    case Test.Failure(_)            => "failure"
+    case Test.Label(description, _) => description
+    case Test.Message(_, test)      => label(test)
     case Test.Group(tests) =>
       tests.map(label).distinct match {
         case Nil          => ""
@@ -21,13 +23,14 @@ object Formatter {
     case Test.Success => "success"
   }
 
-  def test(value: Test, duration: Long, color: Boolean): String =
+  def test(value: Test[Id], duration: Long, color: Boolean): String =
     this.test(color, duration, level = 0)(value)
 
-  def test(color: Boolean, duration: Long, level: Int): Test => String = {
+  def test(color: Boolean, duration: Long, level: Int): Test[Id] => String = {
     case group @ Test.Group(tests) =>
       val label = this.label(group)
-      if (group.success) success(label, this.duration(duration, level), color)
+      if (group.success)
+        success(label, this.duration(duration, level), color)
       else {
         val details =
           tests.map(this.test(color, duration, level + 1)).mkString(EOL)
@@ -54,7 +57,8 @@ object Formatter {
       success(description, Some(duration), color)
     case Test.Message(description, test) =>
       val details =
-        if (test.success) Text.colorizeCond(description, Console.GREEN, color)
+        if (test.success)
+          Text.colorizeCond(description, Console.GREEN, color)
         else Text.colorizeCond(description, Console.RED, color)
       this.test(color, duration, level)(test) + EOL + Text.padLeft(details,
                                                                    level * 2)

@@ -1,9 +1,11 @@
 package com.ayendo.testf.runner
 
+import cats.Id
 import com.ayendo.testf.Test
 import sbt.testing._
 
-case class TestFEvent(task: TaskDef, duration: Long, test: Test) extends Event {
+case class TestFEvent(task: TaskDef, duration: Long, test: Test[Id])
+    extends Event {
   override val fullyQualifiedName: String = task.fullyQualifiedName()
 
   override val fingerprint: Fingerprint = task.fingerprint()

@@ -4,52 +4,36 @@ import cats._
 import cats.implicits._
 
 trait TestBuilders {
-  def cond(predicate: Boolean): Test =
+  def cond(predicate: Boolean): Test[Nothing] =
     if (predicate) success else error("false")
 
-  def equal[A: Eq: Show](actual: A, expected: A): Test =
+  def defer[F[_]](test: F[Test[F]]): Test[F] = Test.Defer(test)
+
+  def equal[A: Eq: Show](actual: A, expected: A): Test[Nothing] =
     if (actual === expected) success
     else error(show"$actual does not match expected $expected")
 
-  def group(tests: Test*): Test = Test.Group(tests.toList)
+  def group[F[_]](tests: Test[F]*): Test[F] = Test.Group(tests.toList)
 
-  def label(description: String, test: Test): Test =
+  def label[F[_]](description: String, test: Test[F]): Test[F] =
     Test.Label(description, test)
 
-  def prefix(description: String, test: Test): Test =
-    test match {
-      case test: Test.Label => test
-      case test             => label(description, test)
-    }
-
-  def labelF[F[_]](description: String, test: F[Test])(
-      implicit F: ApplicativeError[F, Throwable]): F[Test] =
-    test
-      .map(Test.label(description, _))
-      .handleError(throwable => label(description, failure(throwable)))
-
-  def prefixF[F[_]](description: String, test: F[Test])(
-      implicit F: ApplicativeError[F, Throwable]): F[Test] =
-    test
-      .map {
-        case test: Test.Label => test
-        case test             => label(description, test)
-      }
-      .handleError(throwable => label(description, failure(throwable)))
-
-  def liftF[F[_]: Functor, A](value: F[A])(test: A => Test): F[Test] =
-    value.map(test)
-
-  def message(description: String, test: Test): Test =
+  def message[F[_]](description: String, test: Test[F]): Test[F] =
     Test.Message(description, test)
 
-  val success: Test = Test.Success
+  def prefix[F[_]](description: String, test: Test[F]): Test[F] =
+    test match {
+      case test: Test.Label[F] => test
+      case test                => label(description, test)
+    }
 
-  def success(description: String): Test = label(description, success)
+  val success: Test[Nothing] = Test.Success
 
-  def error(message: String): Test = Test.Error(message)
+  def success(description: String): Test[Nothing] = label(description, success)
 
-  def failure(throwable: Throwable): Test = Test.Failure(throwable)
+  def error(message: String): Test[Nothing] = Test.Error(message)
 
-  def skip(test: Test): Test = Test.Skip(test)
+  def failure(throwable: Throwable): Test[Nothing] = Test.Failure(throwable)
+
+  def skip[F[_]](test: Test[F]): Test[F] = Test.Skip(test)
 }

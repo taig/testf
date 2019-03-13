@@ -7,9 +7,9 @@ import com.ayendo.testf._
 import com.ayendo.testf.implicits._
 
 object OptionTest extends TestF {
-  override val suite: IO[List[IO[Test]]] =
-    List(
-      IO.pure(
-        "MonadLaws" @@ Test.verify(MonadTests[Option].monad[Int, Int, String])))
-      .pure[IO]
+  override val suite: IO[Test[IO]] =
+    IO.pure(
+      "MonadLaws" @@ Test
+        .verify(MonadTests[Option].monad[Int, Int, String])
+        .mapK(Test.liftId))
 }
