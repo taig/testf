@@ -40,8 +40,10 @@ private object AutoTestF {
         $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
-          override val suite: cats.effect.IO[com.ayendo.testf.Test[cats.effect.IO]] =
-            cats.effect.IO.pure(${filter(c)(body.toList, label)})
+          override val suite: cats.effect.IO[List[com.ayendo.testf.Test.Result]] = {
+            import cats.implicits._
+            ${filter(c)(body.toList, label)}.map(_.compile).sequence
+          }
         }
         """
       case _ => c.abort(c.enclosingPosition, "Only object allowed")
@@ -72,7 +74,7 @@ private object AutoTestF {
       }
       .map { case (f, test) => q"com.ayendo.testf.LiftIO[$f].lift($test)" }
 
-    c.Expr(q"Test.group(..$tests)")
+    c.Expr(q"List(..$tests)")
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {

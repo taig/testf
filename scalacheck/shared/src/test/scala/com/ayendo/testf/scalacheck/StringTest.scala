@@ -26,8 +26,6 @@ object StringTest extends TestF {
       Test.equal((a + b + c).substring(a.length, a.length + b.length), b)
     }
 
-  override val suite: IO[Test[IO]] =
-    IO.pure(
-      Test.group(
-        List(startsWith, concatenate, substring).map(_.mapK(Test.liftId)): _*))
+  override val suite: IO[List[Test.Result]] =
+    List(startsWith, concatenate, substring).map(_.compile).sequence.pure[IO]
 }

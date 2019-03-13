@@ -1,18 +1,9 @@
 package com.ayendo.testf
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
-
-import scala.concurrent.ExecutionContext
 
 @EnableReflectiveInstantiation
 abstract class TestF {
-  def suite: IO[Test[IO]]
-
-  implicit lazy val contextShift: ContextShift[IO] = TestF.defaultContextShift
-}
-
-object TestF {
-  implicit val defaultContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
+  def suite: IO[List[Test.Result]]
 }

@@ -29,6 +29,6 @@ object WebsiteStatusTest extends TestF {
     "github" @@ Test.defer(
       request[F]("https://github.com/").map(Test.equal(_, 200)))
 
-  override val suite: IO[Test[IO]] =
-    IO.pure(Test.group(typelevel[IO], scalaLang[IO], github[IO]))
+  override val suite: IO[List[Test.Result]] =
+    List(typelevel[IO], scalaLang[IO], github[IO]).map(_.compile).sequence
 }

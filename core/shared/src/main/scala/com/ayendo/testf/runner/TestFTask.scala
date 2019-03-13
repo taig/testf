@@ -2,7 +2,6 @@ package com.ayendo.testf.runner
 
 import java.io.{PrintWriter, StringWriter}
 
-import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
@@ -56,40 +55,25 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      suite <- Async.liftIO(testF.suite)
-      tests <- {
-        import testF.contextShift
-
-        val tests = Test.root(suite).map(_.compile).map { test =>
-          for {
-            start <- IO(System.currentTimeMillis())
-            value <- test.handleError(Test.failure)
-            end <- IO(System.currentTimeMillis())
-          } yield (end - start, value)
-        }
-
-        Async.liftIO(tests.parSequence)
-      }
+      results <- Async.liftIO(testF.suite)
       _ <- lock.take
-      _ <- log[F](loggers, name, tests)
+      _ <- log[F](loggers, name, results)
       _ <- lock.put(true)
-      events = tests.map {
-        case (duration, test) => TestFEvent(task, duration, test)
-      }
+      events = results.map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
   }
 
   def log[F[_]: Sync](loggers: List[Logger],
                       name: String,
-                      tests: List[(Long, Test[Id])]): F[Unit] =
+                      results: List[Test.Result]): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
-      val success = tests.map(_._2).forall(_.success)
+      val success = results.map(_.test).forall(_.success)
       val title =
         Text.colorize(name, if (success) Console.GREEN else Console.RED)
-      val messages = tests.map {
-        case (duration, test) => Formatter.test(test, duration, color)
+      val messages = results.map { result =>
+        Formatter.test(result.test, result.duration, color)
       }
 
       Logging.print(logger, title) *> messages.traverse_(

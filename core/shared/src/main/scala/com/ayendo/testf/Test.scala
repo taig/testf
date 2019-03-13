@@ -22,9 +22,9 @@ object Test extends TestBuilders {
   final case class Message[F[_]](description: String, test: Test[F])
       extends Test[F]
 
-  final case class Skip[F[_]](test: Test[F]) extends Test[F]
-
   final case object Success extends Test[Nothing]
+
+  final case class Result(test: Test[Id], duration: Option[Long])
 
   def liftId: FunctionK[Id, IO] = new (Id ~> IO) {
     override def apply[A](fa: Id[A]): IO[A] = IO.pure(fa)
@@ -32,11 +32,6 @@ object Test extends TestBuilders {
 
   def liftEval: FunctionK[Eval, IO] = new (Eval ~> IO) {
     override def apply[A](fa: Eval[A]): IO[A] = IO.eval(fa)
-  }
-
-  def root[F[_]]: Test[F] => List[Test[F]] = {
-    case test: Group[F] => test.tests
-    case test           => List(test)
   }
 
   implicit val eq: Eq[Test[Id]] =
@@ -49,7 +44,6 @@ object Test extends TestBuilders {
           case (Group(xs), Group(ys))           => xs === ys
           case (Label(dx, x), Label(dy, y))     => dx === dy && eqv(x, y)
           case (Message(dx, x), Message(dy, y)) => dx === dy && eqv(x, y)
-          case (Skip(x), Skip(y))               => eqv(x, y)
           case (Success, Success)               => true
         }
       }
@@ -74,8 +68,7 @@ object Test extends TestBuilders {
         case test: Label[F]     => s"Label(${test.description}, ${show(test.test)})"
         case test: Message[F] =>
           s"Message(${test.description}, ${show(test.test)})"
-        case test: Skip[F] => s"Skip(${show(test.test)})"
-        case Success       => s"Success"
+        case Success => s"Success"
       }
     }
 

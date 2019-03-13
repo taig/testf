@@ -25,12 +25,9 @@ object Generators {
 
     val message = Gen.lzy((description, summon[Test[Id]]).mapN(Test.message))
 
-    val skip = Gen.lzy(summon[Test[Id]]).map(Test.skip)
-
     val success = description.map(Test.success(_))
 
-    val generator =
-      Gen.oneOf(error, failure, group, label, message, skip, success)
+    val generator = Gen.oneOf(error, failure, group, label, message, success)
 
     Arbitrary(generator)
   }
@@ -46,8 +43,7 @@ object Generators {
           Cogen.perturb(seed, (description, test))
         case Test.Message(description, test) =>
           Cogen.perturb(seed, (description, test))
-        case Test.Skip(test) => Cogen.perturb(seed, test)
-        case Test.Success    => seed
+        case Test.Success => seed
       }
     }
 }

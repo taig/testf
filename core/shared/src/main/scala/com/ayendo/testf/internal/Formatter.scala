@@ -19,14 +19,15 @@ object Formatter {
         case head :: Nil  => head
         case head :: tail => tail.foldLeft(head)(_ + " |+| " + _)
       }
-    case Test.Skip(_) => "skip"
     case Test.Success => "success"
   }
 
-  def test(value: Test[Id], duration: Long, color: Boolean): String =
+  def test(value: Test[Id], duration: Option[Long], color: Boolean): String =
     this.test(color, duration, level = 0)(value)
 
-  def test(color: Boolean, duration: Long, level: Int): Test[Id] => String = {
+  def test(color: Boolean,
+           duration: Option[Long],
+           level: Int): Test[Id] => String = {
     case group @ Test.Group(tests) =>
       val label = this.label(group)
       if (group.success)
@@ -42,7 +43,7 @@ object Formatter {
     case Test.Label(description, Test.Failure(throwable)) =>
       failure(description, throwable, this.duration(duration, level), color)
     case Test.Label(description, group @ Test.Group(tests)) =>
-      if (group.success) success(description, Some(duration), color)
+      if (group.success) success(description, duration, color)
       else {
         val details = tests.map(this.test(color, duration, level)).mkString(EOL)
         error(description,
@@ -54,7 +55,7 @@ object Formatter {
     case Test.Label(description, Test.Label(_, test)) =>
       this.test(color, duration, level)(Test.Label(description, test))
     case Test.Label(description, Test.Success) =>
-      success(description, Some(duration), color)
+      success(description, duration, color)
     case Test.Message(description, test) =>
       val details =
         if (test.success)
@@ -62,13 +63,12 @@ object Formatter {
         else Text.colorizeCond(description, Console.RED, color)
       this.test(color, duration, level)(test) + EOL + Text.padLeft(details,
                                                                    level * 2)
-    case Test.Skip(_) => skip("skip", color)
     case Test.Success => success("success", None, color)
     case test         => show"Unknown format: $test"
   }
 
-  def duration(value: Long, level: Int): Option[Long] =
-    if (level === 0) Some(value) else None
+  def duration(value: Option[Long], level: Int): Option[Long] =
+    if (level === 0) value else None
 
   def error(description: String,
             message: Option[String],

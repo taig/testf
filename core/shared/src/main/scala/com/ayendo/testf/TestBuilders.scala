@@ -34,6 +34,4 @@ trait TestBuilders {
   def error(message: String): Test[Nothing] = Test.Error(message)
 
   def failure(throwable: Throwable): Test[Nothing] = Test.Failure(throwable)
-
-  def skip[F[_]](test: Test[F]): Test[F] = Test.Skip(test)
 }
