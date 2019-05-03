@@ -23,7 +23,7 @@ test:
   stage: test
   image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
   script:
-    - sbt -Dmode=strict scalafmtTestAll coverage test coverageReport coverageAggregate publishLocal
+    - sbt -Dmode=strict scalafmtCheckAll coverage test coverageReport coverageAggregate publishLocal
   artifacts:
     paths:
       - /builds/ayendo/testf/target/scala-2.12/

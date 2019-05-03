@@ -3,14 +3,16 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
-  .aggregate(autoJVM,
-             autoJS,
-             coreJVM,
-             coreJS,
-             scalacheckJVM,
-             scalacheckJS,
-             lawsJVM,
-             lawsJS)
+  .aggregate(
+    autoJVM,
+    autoJS,
+    coreJVM,
+    coreJS,
+    scalacheckJVM,
+    scalacheckJS,
+    lawsJVM,
+    lawsJS
+  )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -19,12 +21,13 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
         "org.typelevel" %%% "cats-core" % "1.6.0" ::
-        "org.typelevel" %%% "cats-effect" % "1.2.0" ::
+        "org.typelevel" %%% "cats-effect" % "1.3.0" ::
         "com.lihaoyi" %%% "sourcecode" % "0.1.5" % "test" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework")
+      s"${organization.value}.testf.runner.TestFFramework"
+    )
   )
   .jvmSettings(
     libraryDependencies ++=
@@ -47,7 +50,8 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "testf-auto",
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework")
+      s"${organization.value}.testf.runner.TestFFramework"
+    )
   )
   .dependsOn(core)
 
@@ -71,7 +75,8 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
       Seq(file)
     }.taskValue,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework")
+      s"${organization.value}.testf.runner.TestFFramework"
+    )
   )
   .dependsOn(core)
 
@@ -89,7 +94,8 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
         Nil,
     name := "testf-laws",
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework")
+      s"${organization.value}.testf.runner.TestFFramework"
+    )
   )
   .dependsOn(scalacheck)
 

@@ -52,8 +52,9 @@ private object AutoTestF {
     c.Expr(result)
   }
 
-  def filter(c: blackbox.Context)(body: List[c.Tree],
-                                  label: Boolean): c.Expr[IO[Test[IO]]] = {
+  def filter(
+      c: blackbox.Context
+  )(body: List[c.Tree], label: Boolean): c.Expr[IO[Test[IO]]] = {
     import c.universe._
 
     val test = typeOf[Test[IO]].typeSymbol

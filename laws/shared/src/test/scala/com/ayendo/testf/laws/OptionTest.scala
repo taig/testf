@@ -9,7 +9,8 @@ import com.ayendo.testf.implicits._
 
 object OptionTest extends TestF {
   val monadLaws: Test[Id] = "MonadLaws" @@ Test.verify(
-    MonadTests[Option].monad[Int, Int, String])
+    MonadTests[Option].monad[Int, Int, String]
+  )
 
   override val suite: IO[List[Test.Result]] =
     IO.pure(List(monadLaws).map(_.compile))

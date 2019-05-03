@@ -19,15 +19,18 @@ object WebsiteStatusTest extends TestF {
 
   def typelevel[F[_]: Sync]: Test[F] =
     "typelevel" @@ Test.defer(
-      request[F]("https://typelevel.org/").map(Test.equal(_, 200)))
+      request[F]("https://typelevel.org/").map(Test.equal(_, 200))
+    )
 
   def scalaLang[F[_]: Sync]: Test[F] =
     "scala" @@ Test.defer(
-      request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200)))
+      request[F]("https://www.scala-lang.org/").map(Test.equal(_, 200))
+    )
 
   def github[F[_]: Sync]: Test[F] =
     "github" @@ Test.defer(
-      request[F]("https://github.com/").map(Test.equal(_, 200)))
+      request[F]("https://github.com/").map(Test.equal(_, 200))
+    )
 
   override val suite: IO[List[Test.Result]] =
     List(typelevel[IO], scalaLang[IO], github[IO]).map(_.compile).sequence

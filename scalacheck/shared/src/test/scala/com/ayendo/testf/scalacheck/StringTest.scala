@@ -20,9 +20,11 @@ object StringTest extends TestF {
     }
 
   val substring: Test[Id] =
-    "substring" @@ Test.check3(Gen.alphaNumStr,
-                               Gen.alphaNumStr,
-                               Gen.alphaNumStr) { (a, b, c) =>
+    "substring" @@ Test.check3(
+      Gen.alphaNumStr,
+      Gen.alphaNumStr,
+      Gen.alphaNumStr
+    ) { (a, b, c) =>
       Test.equal((a + b + c).substring(a.length, a.length + b.length), b)
     }
 

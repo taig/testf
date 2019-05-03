@@ -12,19 +12,25 @@ final class TestFFramework extends Framework {
   override val fingerprints: Array[Fingerprint] =
     Array(TestFFramework.ModuleFingerprint)
 
-  override def runner(args: Array[String],
-                      remoteArgs: Array[String],
-                      testClassLoader: ClassLoader): TestFRunner =
-    TestFRunner(args,
-                remoteArgs,
-                testClassLoader,
-                TestFFramework.lock,
-                TestFFramework.contextShift)
+  override def runner(
+      args: Array[String],
+      remoteArgs: Array[String],
+      testClassLoader: ClassLoader
+  ): TestFRunner =
+    TestFRunner(
+      args,
+      remoteArgs,
+      testClassLoader,
+      TestFFramework.lock,
+      TestFFramework.contextShift
+    )
 
-  def slaveRunner(args: Array[String],
-                  remoteArgs: Array[String],
-                  testClassLoader: ClassLoader,
-                  send: String => Unit): Runner =
+  def slaveRunner(
+      args: Array[String],
+      remoteArgs: Array[String],
+      testClassLoader: ClassLoader,
+      send: String => Unit
+  ): Runner =
     runner(args, remoteArgs, testClassLoader)
 }
 

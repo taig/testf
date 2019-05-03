@@ -9,16 +9,19 @@ import com.ayendo.testf._
 import com.ayendo.testf.internal._
 import sbt.testing._
 
-final class TestFTask(task: TaskDef,
-                      classLoader: ClassLoader,
-                      lock: MVar[IO, Boolean])
-    extends Task {
+final class TestFTask(
+    task: TaskDef,
+    classLoader: ClassLoader,
+    lock: MVar[IO, Boolean]
+) extends Task {
   override def tags(): Array[String] = Array.empty
 
   override def taskDef(): TaskDef = task
 
-  override def execute(eventHandler: EventHandler,
-                       loggers: Array[Logger]): Array[Task] = {
+  override def execute(
+      eventHandler: EventHandler,
+      loggers: Array[Logger]
+  ): Array[Task] = {
     TestFTask
       .execute[IO](task, classLoader, eventHandler, loggers.toList, lock)
       .handleError(recover(loggers))
@@ -27,9 +30,11 @@ final class TestFTask(task: TaskDef,
     Array.empty
   }
 
-  def execute(eventHandler: EventHandler,
-              loggers: Array[Logger],
-              continuation: Array[Task] => Unit): Unit =
+  def execute(
+      eventHandler: EventHandler,
+      loggers: Array[Logger],
+      continuation: Array[Task] => Unit
+  ): Unit =
     TestFTask
       .execute[IO](task, classLoader, eventHandler, loggers.toList, lock)
       .handleError(recover(loggers))
@@ -46,11 +51,13 @@ final class TestFTask(task: TaskDef,
 }
 
 object TestFTask {
-  def execute[F[_]](task: TaskDef,
-                    classLoader: ClassLoader,
-                    eventHandler: EventHandler,
-                    loggers: List[Logger],
-                    lock: MVar[F, Boolean])(implicit F: Async[F]): F[Unit] = {
+  def execute[F[_]](
+      task: TaskDef,
+      classLoader: ClassLoader,
+      eventHandler: EventHandler,
+      loggers: List[Logger],
+      lock: MVar[F, Boolean]
+  )(implicit F: Async[F]): F[Unit] = {
     for {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
@@ -64,9 +71,11 @@ object TestFTask {
     } yield ()
   }
 
-  def log[F[_]: Sync](loggers: List[Logger],
-                      name: String,
-                      results: List[Test.Result]): F[Unit] =
+  def log[F[_]: Sync](
+      loggers: List[Logger],
+      name: String,
+      results: List[Test.Result]
+  ): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
       val success = results.map(_.test).forall(_.success)
@@ -77,6 +86,7 @@ object TestFTask {
       }
 
       Logging.print(logger, title) *> messages.traverse_(
-        Logging.print(logger, _))
+        Logging.print(logger, _)
+      )
     }
 }

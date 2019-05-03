@@ -6,8 +6,10 @@ import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
 
 trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
-  def check(prop: Prop,
-            parameters: Parameters = Parameters.default): Test[Nothing] = {
+  def check(
+      prop: Prop,
+      parameters: Parameters = Parameters.default
+  ): Test[Nothing] = {
     val result = org.scalacheck.Test.check(parameters, prop)
     if (result.passed) Test.success
     else Test.error(Pretty.pretty(result, Pretty.Params(2)))
@@ -17,7 +19,8 @@ trait ScalacheckTestBuilders extends ScalacheckTestBuildersN {
 object ScalacheckTestBuilders extends ScalacheckTestBuilders {
   private[scalacheck] def checkTest(
       prop: (Test[Nothing] => Prop) => Prop,
-      parameters: Parameters = Parameters.default): Test[Nothing] = {
+      parameters: Parameters = Parameters.default
+  ): Test[Nothing] = {
     var test: Test[Nothing] = null
 
     val p: Test[Nothing] => Prop = { x =>

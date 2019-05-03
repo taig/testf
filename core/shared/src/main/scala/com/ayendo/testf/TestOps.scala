@@ -36,8 +36,9 @@ object TestOps {
       case Test.Success => Test.Success
     }
 
-  def compile[F[_]](test: Test[F])(implicit F: Monad[F],
-                                   M: Measure[F]): F[Test.Result] = test match {
+  def compile[F[_]](
+      test: Test[F]
+  )(implicit F: Monad[F], M: Measure[F]): F[Test.Result] = test match {
     case test: Test.Defer[F] =>
       M.measure(test.test.flatMap(_.compile)).map {
         case (Test.Result(test, _), duration) =>
@@ -57,8 +58,8 @@ object TestOps {
       }
     case test: Test.Message[F] =>
       compile[F](test.test).map { result =>
-        Test.Result(Test.Message(test.description, result.test),
-                    result.duration)
+        Test
+          .Result(Test.Message(test.description, result.test), result.duration)
       }
     case Test.Success => Test.Result(Test.Success, duration = None).pure[F]
   }

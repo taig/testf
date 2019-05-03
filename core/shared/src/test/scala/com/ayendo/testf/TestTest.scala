@@ -9,24 +9,24 @@ import sourcecode.Name
 
 object TestTest extends TestF {
   def showTest(test: Test[Id], expected: String)(
-      implicit name: Name): Test[Id] =
+      implicit name: Name
+  ): Test[Id] =
     name.value @@ Test.equal(
       Formatter.test(test, duration = None, color = false),
-      expected)
+      expected
+    )
 
   val showError: Test[Id] =
-    showTest("error" @@ Test.error("reason"),
-             """✗ error
-               |  reason""".stripMargin)
+    showTest("error" @@ Test.error("reason"), """✗ error
+                                                |  reason""".stripMargin)
 
   val showFailure: Test[Id] = {
     val exception = new Exception("exception")
 
     val details = Text.padLeft(Formatter.throwable(exception), columns = 2)
 
-    showTest("failure" @@ Test.failure(exception),
-             s"""⚡failure
-                |$details""".stripMargin)
+    showTest("failure" @@ Test.failure(exception), s"""⚡failure
+                                                      |$details""".stripMargin)
   }
 
   val showSuccess: Test[Id] =
@@ -35,7 +35,7 @@ object TestTest extends TestF {
   val showGroupRootWithLabelSuccess: Test[Id] = {
     val test = Test.label(
       "success",
-      Test.success("s1") |+| Test.success("s2"),
+      Test.success("s1") |+| Test.success("s2")
     )
 
     showTest(test, "✓ success")
@@ -55,8 +55,8 @@ object TestTest extends TestF {
 
   val showGroupNestedWithLabelSuccess: Test[Id] = {
     val test = Test.group(
-      Test.label("group",
-                 Test.group(Test.success("s1") |+| Test.success("s2"))))
+      Test.label("group", Test.group(Test.success("s1") |+| Test.success("s2")))
+    )
 
     showTest(test, "✓ group")
   }

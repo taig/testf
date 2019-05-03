@@ -4,12 +4,13 @@ import cats.effect.concurrent.MVar
 import cats.effect.{ContextShift, IO}
 import sbt.testing._
 
-final case class TestFRunner(args: Array[String],
-                             remoteArgs: Array[String],
-                             classLoader: ClassLoader,
-                             lock: MVar[IO, Boolean],
-                             async: ContextShift[IO])
-    extends Runner {
+final case class TestFRunner(
+    args: Array[String],
+    remoteArgs: Array[String],
+    classLoader: ClassLoader,
+    lock: MVar[IO, Boolean],
+    async: ContextShift[IO]
+) extends Runner {
   override def done(): String = ""
 
   override def tasks(list: Array[TaskDef]): Array[Task] =
