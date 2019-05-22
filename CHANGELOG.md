@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 0.0.8
+
+_2019-05-22_
+
+ * Everything is just a `Test[F[_]]`, Lists and Suites go away
+ * Upgrade to sbt-ayendo-houserules 0.1.1
+
 ## 0.0.7
 
 _2019-03-02_
