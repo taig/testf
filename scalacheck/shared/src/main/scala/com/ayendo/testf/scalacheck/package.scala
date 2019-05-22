@@ -1,6 +1,6 @@
 package com.ayendo.testf
 
 package object scalacheck {
-  implicit def scalacheckTest(test: Test.type): ScalacheckTest.type =
-    ScalacheckTest
+  implicit def scalacheckAssertion(test: Test.type): ScalacheckAssertion.type =
+    ScalacheckAssertion
 }

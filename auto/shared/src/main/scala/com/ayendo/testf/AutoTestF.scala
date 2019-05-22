@@ -23,6 +23,12 @@ private object AutoTestF {
       case q"new ${_}" => true
     }
 
+    val suite = c.prefix.tree match {
+      case q"new ${name}" =>
+        c.typecheck(q"??? : $name").tpe.typeSymbol.fullName
+      case _ => c.abort(c.enclosingPosition, "Invalid annotation position")
+    }
+
     val tree = annottees match {
       case head :: Nil => head.tree
       case _           => c.abort(c.enclosingPosition, "Only objects allowed")
@@ -40,9 +46,10 @@ private object AutoTestF {
         $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
           ..$body
 
-          override val suite: cats.effect.IO[List[com.ayendo.testf.Test.Result]] = {
+          override val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
             import cats.implicits._
-            ${filter(c)(body.toList, label)}.map(_.compile).sequence
+            ${filter(c)(body.toList, label)}
+              .map(com.ayendo.testf.Test.label($suite, _))
           }
         }
         """
@@ -73,13 +80,13 @@ private object AutoTestF {
           Some((f, test))
         } else None
       }
-      .map { case (f, test) => q"com.ayendo.testf.LiftIO[$f].lift($test)" }
+      .map { case (f, test) => q"$test.compile" }
 
-    c.Expr(q"List(..$tests)")
+    c.Expr(q"List(..$tests).sequence.map(com.ayendo.testf.Test.group)")
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
     import c.universe._
-    q"com.ayendo.testf.Test.prefix(${term.decodedName.toString}, $term)"
+    q"com.ayendo.testf.Test.fallback(${term.decodedName.toString}, $term)"
   }
 }

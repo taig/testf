@@ -1,14 +1,13 @@
 package com.ayendo.testf
 
-import cats.Id
 import cats.effect.IO
 
 @AutoTestF
 object AutoTestFTest {
-  val valTest: Test[Id] = Test.success
+  val valTest: Test[Pure] = Test.success
 
-  def defTest: Test[Id] = Test.success("val")
+  def defTest: Test[Pure] = Test.success("val")
 
   val ioTest: Test[IO] =
-    Test.label("IO val", Test.defer[IO](IO.pure(Test.success)))
+    Test.label("IO val", Test.effect[IO](IO.pure(Test.success)))
 }

@@ -6,7 +6,7 @@ import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
 import com.ayendo.testf._
-import com.ayendo.testf.internal._
+import com.ayendo.testf.internal.{Formatter, Logging, Reflection}
 import sbt.testing._
 
 final class TestFTask(
@@ -57,36 +57,26 @@ object TestFTask {
       eventHandler: EventHandler,
       loggers: List[Logger],
       lock: MVar[F, Boolean]
-  )(implicit F: Async[F]): F[Unit] = {
+  )(implicit F: Async[F]): F[Unit] =
     for {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      results <- Async.liftIO(testF.suite)
+      tests <- Async.liftIO(testF.suite).map(_.root)
       _ <- lock.take
-      _ <- log[F](loggers, name, results)
+      _ <- tests.traverse(log[F](loggers, _))
       _ <- lock.put(true)
-      events = results.map(TestFEvent(task, _))
+      events = tests.flatMap(_.children).map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
-  }
 
   def log[F[_]: Sync](
       loggers: List[Logger],
-      name: String,
-      results: List[Test.Result]
+      test: Test[Pure]
   ): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
-      val success = results.map(_.test).forall(_.success)
-      val title =
-        Text.colorize(name, if (success) Console.GREEN else Console.RED)
-      val messages = results.map { result =>
-        Formatter.test(result.test, result.duration, color)
-      }
-
-      Logging.print(logger, title) *> messages.traverse_(
-        Logging.print(logger, _)
-      )
+      val message = Formatter.test(test, color)
+      Logging.print(logger, message)
     }
 }

@@ -1,19 +1,36 @@
 package com.ayendo.testf.runner
 
-import com.ayendo.testf.Test
+import com.ayendo.testf._
 import sbt.testing._
 
-case class TestFEvent(task: TaskDef, result: Test.Result) extends Event {
+case class TestFEvent(task: TaskDef, test: Test[Pure]) extends Event {
   override val fullyQualifiedName: String = task.fullyQualifiedName()
 
   override val fingerprint: Fingerprint = task.fingerprint()
 
   override val selector: Selector = task.selectors().head
 
-  override val duration: Long = result.duration.getOrElse(-1)
+  override val duration: Long = -1
 
-  override val status: Status = result.test.status
+  override val status: Status = TestFEvent.status(test)
 
   override val throwable: OptionalThrowable =
-    result.test.failure.fold(new OptionalThrowable())(new OptionalThrowable(_))
+    test.throwable.fold(new OptionalThrowable())(new OptionalThrowable(_))
+}
+
+object TestFEvent {
+  val status: Test[Pure] => Status = {
+    case effect: Test.Effect[Pure] => status(effect.test)
+    case _: Test.Error             => Status.Error
+    case _: Test.Failure           => Status.Failure
+    case group: Test.Group[Pure] =>
+      group.tests.foldLeft(Status.Success) {
+        case (Status.Error, _)   => Status.Error
+        case (Status.Failure, _) => Status.Failure
+        case (_, test)           => status(test)
+      }
+    case Test.Label(_, test)   => status(test)
+    case Test.Message(_, test) => status(test)
+    case Test.Success          => Status.Success
+  }
 }

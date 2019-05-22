@@ -8,10 +8,11 @@ lazy val testf = project
     autoJS,
     coreJVM,
     coreJS,
-    scalacheckJVM,
-    scalacheckJS,
+    hedgehog,
     lawsJVM,
-    lawsJS
+    lawsJS,
+    scalacheckJVM,
+    scalacheckJS
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
@@ -22,7 +23,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
         "org.typelevel" %%% "cats-core" % "1.6.0" ::
         "org.typelevel" %%% "cats-effect" % "1.3.0" ::
-        "com.lihaoyi" %%% "sourcecode" % "0.1.5" % "test" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
@@ -36,7 +36,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-js" %% "scalajs-test-interface" % "0.6.26" ::
+      "org.scala-js" %% "scalajs-test-interface" % "0.6.27" ::
         Nil
   )
 
@@ -69,7 +69,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
     name := "testf-scalacheck",
     sourceGenerators in Compile += Def.task {
       val pkg = s"${organization.value}.testf.scalacheck"
-      val name = "ScalacheckTestBuildersN"
+      val name = "ScalacheckAssertionN"
       val file = (sourceManaged in Compile).value / s"$name.scala"
       IO.write(file, ScalacheckGenerator(pkg, name))
       Seq(file)
@@ -102,3 +102,21 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
 lazy val lawsJVM = laws.jvm
 
 lazy val lawsJS = laws.js
+
+lazy val hedgehog = project
+  .settings(myMavenRepoPublishSettings)
+  .settings(
+    libraryDependencies ++=
+      "hedgehog" %% "hedgehog-core" % "d74f5bb31f26d3e3b7f7d0198b6e768a1ed20669" ::
+        "hedgehog" %% "hedgehog-runner" % "d74f5bb31f26d3e3b7f7d0198b6e768a1ed20669" ::
+        Nil,
+    name := "testf-hedgehog",
+    resolvers += Resolver.url(
+      "hedgehog",
+      url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
+    )(Resolver.ivyStylePatterns),
+    testFrameworks += new TestFramework(
+      s"${organization.value}.testf.runner.TestFFramework"
+    )
+  )
+  .dependsOn(coreJVM)
