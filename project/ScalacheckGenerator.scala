@@ -5,7 +5,7 @@ object ScalacheckGenerator {
        |import com.ayendo.testf._
        |import org.scalacheck.Test.Parameters
        |import org.scalacheck.util.Pretty
-       |import org.scalacheck.{Gen, Prop, Shrink}
+       |import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}
        |
        |trait $name {
        |${(1 to 8).map(check).mkString("\n")}
@@ -15,6 +15,9 @@ object ScalacheckGenerator {
 
   def types(length: Int): String =
     (1 to length).map(index => s"A$index").mkString(", ")
+
+  def arbitraryTypes(length: Int): String =
+    (1 to length).map(index => s"A$index: Arbitrary").mkString(", ")
 
   def parameters(length: Int): String =
     (1 to length).map(index => s"a$index: Gen[A$index]").mkString(", ")
@@ -32,15 +35,39 @@ object ScalacheckGenerator {
 
   def check(length: Int): String = {
     s"""
-       |  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters = Parameters.default)(
-       |    f: (${types(length)}) => Test[Pure]
-       |  )(
+       |  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters)(f: (${types(
+         length
+       )}) => Test[Pure])(
        |    implicit
        |    ${implicits(length)}
        |  ): Test[Pure] =
-       |    ScalacheckAssertion.checkTest(Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
+       |    ScalacheckAssertion.checkTest(
+       |      Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
          length
        )}))
+       |
+       |  def check$length[${types(length)}](${parameters(length)})(f: (${types(
+         length
+       )}) => Test[Pure])(
+       |    implicit
+       |    ${implicits(length)}
+       |  ): Test[Pure] = check$length(${argumentsGen(length)}, Parameters.default)(f)
+       |
+       |  def check$length[${arbitraryTypes(length)}](parameters: Parameters)(f: (${types(
+         length
+       )}) => Test[Pure])(
+       |    implicit
+       |    ${implicits(length)}
+       |  ): Test[Pure] =
+       |    ScalacheckAssertion.checkTest { implicit prop =>
+       |      Prop.forAll(f)
+       |    }
+       |
+       |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Test[Pure])(
+       |    implicit
+       |    ${implicits(length)}
+       |  ): Test[Pure] =
+       |    check$length(Parameters.default)(f)
      """.stripMargin
   }
 }
