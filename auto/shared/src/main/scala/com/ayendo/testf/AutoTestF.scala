@@ -7,23 +7,35 @@ import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-abstract class AutoTestF(label: Boolean = true) extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro AutoTestF.apply
+class AutoTestF(entrypoint: Boolean = true, label: Boolean = true)
+    extends StaticAnnotation {
+  def macroTransform(annottees: Any*): Any = macro AutoTestFMacro.apply
 }
 
-private object AutoTestF {
-  def apply(c: blackbox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+private final class AutoTestFMacro(val c: blackbox.Context) {
+  def apply(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
-    val label = c.prefix.tree match {
+    val (entrypoint, label) = c.prefix.tree match {
+      case q"new ${_}(entrypoint = $entrypoint, label = $label)" =>
+        (c.eval[Boolean](c.Expr(entrypoint)), c.eval[Boolean](c.Expr(label)))
+      case q"new ${_}(entrypoint = $entrypoint)" =>
+        (c.eval[Boolean](c.Expr(entrypoint)), true)
       case q"new ${_}(label = $label)" =>
-        c.eval[Boolean](c.Expr(label))
-      case q"new ${_}($label)" =>
-        c.eval[Boolean](c.Expr(label))
-      case q"new ${_}" => true
+        (true, c.eval[Boolean](c.Expr(label)))
+      case q"new ${_}($arguments)" =>
+        if (arguments.nonEmpty)
+          c.abort(
+            c.enclosingPosition,
+            "Invalid arguments supplied to @AutoTestF. Please use named arguments."
+          )
+        else (true, true)
+      case q"new ${_}" => (true, true)
     }
 
     val suite = c.prefix.tree match {
+      case q"new ${name}(..$_)" =>
+        c.typecheck(q"??? : $name").tpe.typeSymbol.fullName
       case q"new ${name}" =>
         c.typecheck(q"??? : $name").tpe.typeSymbol.fullName
       case _ => c.abort(c.enclosingPosition, "Invalid annotation position")
@@ -36,17 +48,15 @@ private object AutoTestF {
 
     val result = tree match {
       case q"$mods object $name extends ..$parents { $self => ..$body }" =>
-        val head :: tail = parents
-        val parent = c.typecheck(q"??? : $head").tpe.asInstanceOf[TypeRef]
-
-        if (parent != typeOf[AnyRef])
-          c.abort(c.enclosingPosition, "Invalid parent class")
+        val p =
+          if (entrypoint) tq"com.ayendo.testf.TestF" +: parents.tail
+          else parents
 
         q"""
-        $mods object $name extends com.ayendo.testf.TestF with ..$tail { $self =>
+        $mods object $name extends ..$p { $self =>
           ..$body
 
-          override val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
+          val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
             import cats.implicits._
             ${filter(c)(body.toList, label)}
               .map(com.ayendo.testf.Test.label($suite, _))
