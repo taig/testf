@@ -2,7 +2,6 @@ package com.ayendo.testf.laws
 
 import cats.implicits._
 import com.ayendo.testf._
-import org.scalacheck.cats.implicits._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
 object Generators {
@@ -13,15 +12,38 @@ object Generators {
   }
 
   implicit val arbitraryTest: Arbitrary[Test[Pure]] = {
-    val error = (summon[String], description).mapN(Test.error(_) ~ _)
+    val error =
+      for {
+        description <- description
+        message <- summon[String]
+      } yield Test.error(message) ~ description
 
-    val failure = (summon[Throwable], description).mapN(Test.failure(_) ~ _)
+    val failure =
+      for {
+        description <- description
+        throwable <- summon[Throwable]
+      } yield Test.failure(throwable) ~ description
 
-    val group = Gen.lzy((summon[Test[Pure]], summon[Test[Pure]]).mapN(_ |+| _))
+    val group = Gen.lzy(
+      for {
+        x <- summon[Test[Pure]]
+        y <- summon[Test[Pure]]
+      } yield x |+| y
+    )
 
-    val label = Gen.lzy((description, summon[Test[Pure]]).mapN(Test.label))
+    val label = Gen.lzy(
+      for {
+        description <- description
+        test <- summon[Test[Pure]]
+      } yield Test.label(description, test)
+    )
 
-    val message = Gen.lzy((description, summon[Test[Pure]]).mapN(Test.message))
+    val message = Gen.lzy(
+      for {
+        description <- description
+        test <- summon[Test[Pure]]
+      } yield Test.message(description, test)
+    )
 
     val success = description.map(Test.success(_))
 
