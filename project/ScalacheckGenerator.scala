@@ -30,21 +30,17 @@ object ScalacheckGenerator {
   def argumentsGen(length: Int): String =
     (1 to length).map(index => s"a$index").mkString(", ")
 
-  def argumentsImplicits(length: Int): String =
-    (1 to length).map(index => s"s$index, pp$index").mkString(", ")
-
   def check(length: Int): String = {
-    s"""
-       |  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters)(f: (${types(
+    s"""  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters)(f: (${types(
          length
        )}) => Test[Pure])(
        |    implicit
        |    ${implicits(length)}
        |  ): Test[Pure] =
        |    ScalacheckAssertion.checkTest(
-       |      Prop.forAll(${argumentsGen(length)})(f)(_, ${argumentsImplicits(
-         length
-       )}))
+       |      implicit prop => Prop.forAll(${argumentsGen(length)})(f),
+       |      parameters
+       |    )
        |
        |  def check$length[${types(length)}](${parameters(length)})(f: (${types(
          length
@@ -59,9 +55,10 @@ object ScalacheckGenerator {
        |    implicit
        |    ${implicits(length)}
        |  ): Test[Pure] =
-       |    ScalacheckAssertion.checkTest { implicit prop =>
-       |      Prop.forAll(f)
-       |    }
+       |    ScalacheckAssertion.checkTest(
+       |      implicit prop => Prop.forAll(f),
+       |      parameters
+       |    )
        |
        |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Test[Pure])(
        |    implicit
