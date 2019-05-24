@@ -33,33 +33,25 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
       case q"new ${_}" => (true, true)
     }
 
-    val suite = c.prefix.tree match {
-      case q"new ${name}(..$_)" =>
-        c.typecheck(q"??? : $name").tpe.typeSymbol.fullName
-      case q"new ${name}" =>
-        c.typecheck(q"??? : $name").tpe.typeSymbol.fullName
-      case _ => c.abort(c.enclosingPosition, "Invalid annotation position")
-    }
-
     val tree = annottees match {
       case head :: Nil => head.tree
       case _           => c.abort(c.enclosingPosition, "Only objects allowed")
     }
 
     val result = tree match {
-      case q"$mods object $name extends ..$parents { $self => ..$body }" =>
-        val p =
+      case q"$mods object ${name: TermName} extends ..$parents { $self => ..$body }" =>
+        val parent =
           if (entrypoint) tq"com.ayendo.testf.TestF" +: parents.tail
           else parents
 
         q"""
-        $mods object $name extends ..$p { $self =>
+        $mods object $name extends ..$parent { $self =>
           ..$body
 
           val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
             import cats.implicits._
             ${filter(c)(body.toList, label)}
-              .map(com.ayendo.testf.Test.label($suite, _))
+              .map(com.ayendo.testf.Test.label(${name.encodedName.toString}, _))
           }
         }
         """
