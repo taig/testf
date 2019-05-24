@@ -10,6 +10,12 @@ trait Assertion {
       show"'$value' is not equal to expected '$expected'"
     )
 
+  def endsWith(value: String, expected: String): Test[Pure] =
+    Test.assert(
+      value endsWith expected,
+      show"'$value' does not end with '$expected'"
+    )
+
   def gt[A: PartialOrder: Show](value: A, expected: A): Test[Pure] =
     Test.assert(value > expected, s"'$value' is not > '$expected'")
 
