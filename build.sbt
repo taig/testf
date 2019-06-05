@@ -36,7 +36,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-js" %% "scalajs-test-interface" % "0.6.27" ::
+      "org.scala-js" %% "scalajs-test-interface" % "0.6.28" ::
         Nil
   )
 
