@@ -1,5 +1,7 @@
 package com.ayendo.testf.internal
 
+import java.io.{PrintWriter, StringWriter}
+
 import com.ayendo.testf.{Pure, Test}
 
 import scala.compat.Platform.EOL
@@ -85,6 +87,9 @@ object Formatter {
     Text.colorizeCond(details, Console.GREEN, color)
   }
 
-  def throwable(throwable: Throwable): String =
-    throwable.getMessage + EOL + throwable.getStackTrace.mkString("", EOL, EOL)
+  def throwable(throwable: Throwable): String = {
+    val writer = new StringWriter
+    throwable.printStackTrace(new PrintWriter(writer))
+    writer.toString
+  }
 }
