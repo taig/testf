@@ -22,7 +22,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
         "org.typelevel" %%% "cats-core" % "1.6.1" ::
-        "org.typelevel" %%% "cats-effect" % "1.3.0" ::
+        "org.typelevel" %%% "cats-effect" % "1.3.1" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
