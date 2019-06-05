@@ -44,8 +44,12 @@ object Formatter {
       val label =
         if (group.success) success(description, color)
         else error(description, message = None, color)
-      val details = test(color, level + 1)(group)
-      label + EOL + details
+
+      if (group.tests.isEmpty) label
+      else {
+        val details = test(color, level + 1)(group)
+        label + EOL + details
+      }
     case Test.Label(description1, label: Test.Label[Pure]) =>
       test(color, level)(Test.label(description1, Test.of(label)))
     case Test.Label(label, Test.Message(message, test)) =>
