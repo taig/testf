@@ -1,5 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
+crossScalaVersions := Seq("2.12.8", scalaVersion.value)
+
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
@@ -21,8 +23,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
-        "org.typelevel" %%% "cats-core" % "1.6.1" ::
-        "org.typelevel" %%% "cats-effect" % "1.3.1" ::
+        "org.typelevel" %%% "cats-effect" % "2.0.0-M4" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
@@ -89,7 +90,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-laws" % "1.6.1" ::
+      "org.typelevel" %%% "cats-laws" % "2.0.0-M4" ::
         Nil,
     name := "testf-laws",
     testFrameworks += new TestFramework(
@@ -106,8 +107,8 @@ lazy val hedgehog = project
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "hedgehog" %% "hedgehog-core" % "d74f5bb31f26d3e3b7f7d0198b6e768a1ed20669" ::
-        "hedgehog" %% "hedgehog-runner" % "d74f5bb31f26d3e3b7f7d0198b6e768a1ed20669" ::
+      "hedgehog" %% "hedgehog-core" % "c36b298d5e61ecaf68f8b607c4578bc65aaaa3f7" ::
+        "hedgehog" %% "hedgehog-runner" % "c36b298d5e61ecaf68f8b607c4578bc65aaaa3f7" ::
         Nil,
     name := "testf-hedgehog",
     resolvers += Resolver.url(

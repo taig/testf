@@ -26,7 +26,7 @@ test:
     - sbt -Dmode=strict scalafmtCheckAll coverage test coverageReport coverageAggregate publishLocal
   artifacts:
     paths:
-      - /builds/ayendo/testf/target/scala-2.12/
+      - /builds/ayendo/testf/target/scala-2.13/
 
 
 publish:
@@ -36,4 +36,4 @@ publish:
     - master
     - tags
   script:
-    - sbt publish
+    - sbt +publish

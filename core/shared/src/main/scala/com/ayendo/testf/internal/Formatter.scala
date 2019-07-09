@@ -4,8 +4,6 @@ import java.io.{PrintWriter, StringWriter}
 
 import com.ayendo.testf.{Pure, Test}
 
-import scala.compat.Platform.EOL
-
 object Formatter {
   val label: Test[Pure] => String = {
     case effect: Test.Effect[Pure]  => label(effect.test)
@@ -32,7 +30,7 @@ object Formatter {
     case Test.Error(message)     => error("error", Some(message), color)
     case Test.Failure(throwable) => failure("failure", throwable, color)
     case Test.Group(tests) =>
-      val messages = tests.map(test(_, color)).mkString(EOL)
+      val messages = tests.map(test(_, color)).mkString(System.lineSeparator)
       Text.padLeft(messages, level * 2)
     case Test.Success => success("success", color)
     case Test.Label(description, Test.Error(message)) =>
@@ -48,13 +46,14 @@ object Formatter {
       if (group.tests.isEmpty) label
       else {
         val details = test(color, level + 1)(group)
-        label + EOL + details
+        label + System.lineSeparator + details
       }
     case Test.Label(description1, label: Test.Label[Pure]) =>
       test(color, level)(Test.label(description1, Test.of(label)))
     case Test.Label(label, Test.Message(message, test)) =>
       this.test(color, level)(
-        Test.label(label + EOL + Text.padLeft(message, 2), test)
+        Test
+          .label(label + System.lineSeparator + Text.padLeft(message, 2), test)
       )
     case test => s"No format for Test $test"
   }
@@ -65,7 +64,7 @@ object Formatter {
       color: Boolean
   ): String = {
     val value = s"✗ $description" + message
-      .map(EOL + Text.padLeft(_, 2))
+      .map(System.lineSeparator + Text.padLeft(_, 2))
       .getOrElse("")
     Text.colorizeCond(value, Console.RED, color)
   }
@@ -76,7 +75,10 @@ object Formatter {
       color: Boolean
   ): String = {
     val error = Formatter.throwable(throwable)
-    val details = s"⚡$description" + EOL + Text.padLeft(error, 2)
+    val details = s"⚡$description" + System.lineSeparator + Text.padLeft(
+      error,
+      2
+    )
     Text.colorizeCond(details, Console.RED, color)
   }
 
