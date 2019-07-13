@@ -49,7 +49,6 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
           ..$body
 
           val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
-            import cats.implicits._
             ${filter(c)(body.toList, label)}
               .map(com.ayendo.testf.Test.label(${name.encodedName.toString}, _))
           }
@@ -84,7 +83,9 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
       }
       .map { case (f, test) => q"$test.compile" }
 
-    c.Expr(q"List(..$tests).sequence.map(com.ayendo.testf.Test.group)")
+    c.Expr(
+      q"cats.instances.list.catsStdInstancesForList.sequence(List(..$tests)).map(com.ayendo.testf.Test.group)"
+    )
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
