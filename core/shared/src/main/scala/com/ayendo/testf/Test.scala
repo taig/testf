@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats._
 import cats.implicits._
 
-sealed trait Test[+F[_]] extends Product with Serializable {
+sealed abstract class Test[+F[_]] extends Product with Serializable {
   final def root: List[Test[F]] = this match {
     case Test.Group(tests) => tests
     case test              => List(test)
@@ -57,7 +57,7 @@ object Test extends Assertion {
   def success(description: String): Test[Pure] =
     label(description, success)
 
-  def error(message: String): Test[Pure] = Test.Error(message)
+  def error(message: String): Test[Pure] = Error(message)
 
   def failure(throwable: Throwable): Test[Pure] =
     Test.Failure(throwable)
