@@ -40,11 +40,11 @@ trait Assertion {
       show"'$value' does not start with '$expected'"
     )
 
-  def when[F[_]](condition: Boolean, test: Test[F]): Test[F] =
+  def when[F[_]](condition: Boolean)(test: Test[F]): Test[F] =
     if (condition) test else Test.success
 
-  def unless[F[_]](condition: Boolean, test: Test[F]): Test[F] =
-    when(!condition, test)
+  def unless[F[_]](condition: Boolean)(test: Test[F]): Test[F] =
+    when(!condition)(test)
 }
 
 object Assertion extends Assertion
