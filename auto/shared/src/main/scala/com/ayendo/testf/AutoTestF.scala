@@ -83,9 +83,11 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
       }
       .map { case (f, test) => q"$test.compile" }
 
-    c.Expr(
-      q"cats.instances.list.catsStdInstancesForList.sequence(List(..$tests)).map(com.ayendo.testf.Test.group)"
-    )
+    c.Expr {
+      q"""cats.instances.list.catsStdInstancesForList
+            .sequence(List[cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]]](..$tests))
+            .map(com.ayendo.testf.Test.group)"""
+    }
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
