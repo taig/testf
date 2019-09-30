@@ -9,5 +9,5 @@ object OptionTest extends TestF {
   val monadLaws =
     Test.verify("MonadLaws", MonadTests[Option].monad[Int, Int, String])
 
-  override val suite: IO[Test[Pure]] = (monadLaws label "OptionTest").compile
+  override val suite: IO[Test[Pure]] = (monadLaws ~ "OptionTest").compile
 }

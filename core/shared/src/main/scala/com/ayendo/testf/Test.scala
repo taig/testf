@@ -5,28 +5,80 @@ import cats._
 import cats.implicits._
 
 sealed abstract class Test[+F[_]] extends Product with Serializable {
+  def covary[G[α] >: F[α]]: Test[G] = this
+
   final def root: List[Test[F]] = this match {
     case Test.Group(tests) => tests
     case test              => List(test)
   }
+
+  final def compile[G[α] >: F[α]](
+      implicit compiler: Compiler[G]
+  ): IO[Test[Pure]] =
+    compiler.compile(this)
+
+  final def mapK[G[α] >: F[α], H[_]](
+      f: G ~> H
+  )(implicit G: Functor[G]): Test[H] = covary[G] match {
+    case test: Test.Effect[G] =>
+      Test.Effect(f(test.test.map(_.mapK(f))))
+    case error: Test.Error     => error
+    case failure: Test.Failure => failure
+    case group: Test.Group[G]  => Test.Group(group.tests.map(_.mapK(f)))
+    case label: Test.Label[G] =>
+      Test.Label(label.description, label.test.mapK(f))
+    case message: Test.Message[G] =>
+      Test.Message(message.description, message.test.mapK(f))
+    case Test.Success => Test.Success
+  }
+
+  final def fold[G[α] >: F[α], A](
+      effect: G[Test[G]] => A,
+      error: String => A,
+      failure: Throwable => A,
+      group: List[Test[G]] => A,
+      label: (String, Test[G]) => A,
+      message: (String, Test[G]) => A,
+      success: => A
+  ): A = covary[G] match {
+    case test: Test.Effect[G]    => effect(test.test)
+    case Test.Error(message)     => error(message)
+    case Test.Failure(throwable) => failure(throwable)
+    case test: Test.Group[G]     => group(test.tests)
+    case test: Test.Label[G]     => label(test.description, test.test)
+    case test: Test.Message[G]   => message(test.description, test.test)
+    case Test.Success            => success
+  }
+
+  final def ~(description: String): Test[F] =
+    Test.label(description, this)
+
+  final def &[G[α] >: F[α]](test: Test[G]): Test[G] =
+    (this, test) match {
+      case (x: Test.Group[F], y: Test.Group[G]) =>
+        Test.Group(x.tests ++ y.tests)
+      case (x: Test.Group[F], test) => Test.Group(x.tests :+ test)
+      case (test, y: Test.Group[G]) => Test.Group(test +: y.tests)
+      case (x, y)                   => Test.of(x, y)
+    }
 }
 
 object Test extends Assertion {
-  final case class Effect[F[_]](test: F[Test[F]]) extends Test[F]
+  private final case class Effect[F[_]](test: F[Test[F]]) extends Test[F]
 
-  final case class Error(message: String) extends Test[Pure]
+  private final case class Error(message: String) extends Test[Pure]
 
-  final case class Failure(throwable: Throwable) extends Test[Pure]
+  private final case class Failure(throwable: Throwable) extends Test[Pure]
 
-  final case class Group[F[_]](tests: List[Test[F]]) extends Test[F]
+  private final case class Group[F[_]](tests: List[Test[F]]) extends Test[F]
 
-  final case class Label[F[_]](description: String, test: Test[F])
+  private final case class Label[F[_]](description: String, test: Test[F])
       extends Test[F]
 
-  final case class Message[F[_]](description: String, test: Test[F])
+  private final case class Message[F[_]](description: String, test: Test[F])
       extends Test[F]
 
-  final case object Success extends Test[Pure]
+  private final case object Success extends Test[Pure]
 
   def assert(predicate: Boolean, message: => String): Test[Pure] =
     if (predicate) success else error(message)
@@ -48,8 +100,6 @@ object Test extends Assertion {
   def message[F[_]](description: String, test: Test[F]): Test[F] =
     Test.Message(description, test)
 
-  def not[F[_]](test: Test[F]): Test[Pure] = ???
-
   def of[F[_]](tests: Test[F]*): Test[F] = group(tests.toList)
 
   val success: Test[Pure] = Test.Success
@@ -62,48 +112,20 @@ object Test extends Assertion {
   def failure(throwable: Throwable): Test[Pure] =
     Test.Failure(throwable)
 
-  implicit def semigroup[F[_]]: Semigroup[Test[F]] = new Semigroup[Test[F]] {
-    override def combine(x: Test[F], y: Test[F]): Test[F] =
-      (x, y) match {
-        case (x: Group[F], y: Group[F]) => Group(x.tests ++ y.tests)
-        case (x: Group[F], test)        => Group(x.tests :+ test)
-        case (test, y: Group[F])        => Group(test +: y.tests)
-        case (x, y)                     => of(x, y)
-      }
-  }
+  implicit def semigroup[F[_]]: Semigroup[Test[F]] = _ & _
 
   implicit val eq: Eq[Test[Pure]] = new Eq[Test[Pure]] {
     override def eqv(x: Test[Pure], y: Test[Pure]): Boolean =
       (x, y) match {
         case (Effect(_), Effect(_))             => false
         case (Error(x), Error(y))               => x === y
-        case (Failure(x), Failure(y))           => x.getClass == y.getClass
+        case (Failure(x), Failure(y))           => x == y
         case (Group(x), Group(y))               => x === y
         case (Label(xd, xt), Label(yd, yt))     => xd === yd && xt === yt
         case (Message(xd, xt), Message(yd, yt)) => xd === yd && xt === yt
         case (Success, Success)                 => true
         case _                                  => false
       }
-  }
-
-  implicit final class TestOps[F[_]](val test: Test[F]) extends AnyVal {
-    def compile(implicit compiler: Compiler[F]): IO[Test[Pure]] =
-      compiler.compile(test)
-
-    def mapK[G[_]](f: F ~> G)(implicit F: Functor[F]): Test[G] = test match {
-      case effect: Effect[F] => Effect(f(effect.test.map(_.mapK(f))))
-      case error: Error      => error
-      case failure: Failure  => failure
-      case group: Group[F]   => Group(group.tests.map(_.mapK(f)))
-      case label: Label[F]   => Label(label.description, label.test.mapK(f))
-      case message: Message[F] =>
-        Message(message.description, message.test.mapK(f))
-      case Success => Success
-    }
-
-    def label(description: String): Test[F] = Test.label(description, test)
-
-    def ~(description: String): Test[F] = label(description)
   }
 
   implicit final class TestPureOps(val test: Test[Pure]) extends AnyVal {

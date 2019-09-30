@@ -10,6 +10,9 @@ trait Assertion {
       show"'$value' is not equal to expected '$expected'"
     )
 
+  def equalUniversal[A](value: A, expected: A): Test[Pure] =
+    equal[A](value, expected)(Eq.fromUniversalEquals, Show.fromToString)
+
   def endsWith(value: String, expected: String): Test[Pure] =
     Test.assert(
       value endsWith expected,

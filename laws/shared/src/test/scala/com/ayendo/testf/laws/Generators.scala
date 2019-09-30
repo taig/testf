@@ -2,6 +2,7 @@ package com.ayendo.testf.laws
 
 import cats.implicits._
 import com.ayendo.testf._
+import org.scalacheck.rng.Seed
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
 object Generators {
@@ -54,16 +55,15 @@ object Generators {
 
   implicit val cogenTest: Cogen[Test[Pure]] =
     Cogen { (seed, test) =>
-      test match {
-        case effect: Test.Effect[Pure] => Cogen.perturb(seed, effect.test)
-        case Test.Error(message)       => Cogen.perturb(seed, message)
-        case Test.Failure(throwable)   => Cogen.perturb(seed, throwable)
-        case Test.Group(tests)         => Cogen.perturb(seed, tests)
-        case Test.Label(description, test) =>
-          Cogen.perturb(seed, (description, test))
-        case Test.Message(description, test) =>
-          Cogen.perturb(seed, (description, test))
-        case Test.Success => seed
-      }
+      test.fold[Pure, Seed](
+        effect = (test: Test[Pure]) => Cogen.perturb(seed, test),
+        error = Cogen.perturb(seed, _),
+        failure = Cogen.perturb(seed, _),
+        group = Cogen.perturb(seed, _),
+        label = (description, test) => Cogen.perturb(seed, (description, test)),
+        message =
+          (description, test) => Cogen.perturb(seed, (description, test)),
+        success = seed
+      )
     }
 }

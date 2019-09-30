@@ -13,5 +13,5 @@ object TestTest extends TestF {
     Test.verify("SemigroupLaws", SemigroupTests[Test[Pure]].semigroup)
 
   override val suite: IO[Test[Pure]] =
-    (Test.of(eqLaws, semigroupLaws) label "TestTest").compile
+    (Test.of(eqLaws, semigroupLaws) ~ "TestTest").compile
 }

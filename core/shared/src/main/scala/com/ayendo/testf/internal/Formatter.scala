@@ -4,59 +4,67 @@ import java.io.{PrintWriter, StringWriter}
 
 import com.ayendo.testf.{Pure, Test}
 
-object Formatter {
-  val label: Test[Pure] => String = {
-    case effect: Test.Effect[Pure]  => label(effect.test)
-    case Test.Error(_)              => "error"
-    case Test.Failure(_)            => "failure"
-    case Test.Label(description, _) => description
-    case Test.Message(_, test)      => label(test)
-    case Test.Group(tests) =>
-      tests.map(label).distinct match {
-        case Nil          => ""
-        case head :: Nil  => head
-        case head :: tail => "(" + tail.foldLeft(head)(_ + ", " + _) + ")"
-      }
-    case Test.Success => "success"
-  }
+import scala.annotation.tailrec
 
+object Formatter {
   def test(value: Test[Pure], color: Boolean): String =
     this.test(color, level = 0)(value)
 
   def test(
       color: Boolean,
       level: Int
-  ): Test[Pure] => String = {
-    case Test.Error(message)     => error("error", Some(message), color)
-    case Test.Failure(throwable) => failure("failure", throwable, color)
-    case Test.Group(tests) =>
-      val messages = tests.map(test(_, color)).mkString(System.lineSeparator)
+  ): Test[Pure] => String = _.fold[Pure, String](
+    effect = Formatter.test(color, level),
+    error = message => error("error", Some(message), color),
+    failure = throwable => failure("failure", throwable, color),
+    group = { tests =>
+      val messages = tests
+        .map(Formatter.test(color, level + 1))
+        .mkString(System.lineSeparator)
       Text.padLeft(messages, level * 2)
-    case Test.Success => success("success", color)
-    case Test.Label(description, Test.Error(message)) =>
-      error(description, Some(message), color)
-    case Test.Label(description, Test.Failure(throwable)) =>
-      failure(description, throwable, color)
-    case Test.Label(description, Test.Success) => success(description, color)
-    case Test.Label(description, group: Test.Group[Pure]) =>
-      val label =
-        if (group.success) success(description, color)
-        else error(description, message = None, color)
+    },
+    label = { (description, test) =>
+      test.fold[Pure, String](
+        effect = test => "???",
+        error = message =>
+          Text.padLeft(
+            error(description, Some(message), color),
+            columns = level * 2
+          ),
+        failure = throwable =>
+          Text.padLeft(
+            failure(description, throwable, color),
+            columns = level * 2
+          ),
+        group = { tests =>
+          val label =
+            if (tests.forall(_.success)) success(description, color)
+            else error(description, message = None, color)
 
-      if (group.tests.isEmpty) label
-      else {
-        val details = test(color, level + 1)(group)
-        label + System.lineSeparator + details
-      }
-    case Test.Label(description1, label: Test.Label[Pure]) =>
-      test(color, level)(Test.label(description1, Test.of(label)))
-    case Test.Label(label, Test.Message(message, test)) =>
-      this.test(color, level)(
-        Test
-          .label(label + System.lineSeparator + Text.padLeft(message, 2), test)
+          if (tests.isEmpty) label
+          else {
+            val details = tests.map(Formatter.test(color, level + 1))
+            label + System.lineSeparator + details.mkString("\n")
+          }
+        },
+        label = { (additional, test) =>
+          Formatter.test(color, level)(
+            Test.label(description + ", " + additional, test)
+          )
+        },
+        message = { (additional, test) =>
+          Formatter.test(color, level)(
+            Test.label(description + ", " + additional, test)
+          )
+        },
+        success = Text.padLeft(success(description, color), columns = level * 2)
       )
-    case test => s"No format for Test $test"
-  }
+    },
+    message = { (description, test) =>
+      "???"
+    },
+    success = success("success", color)
+  )
 
   def error(
       description: String,

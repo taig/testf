@@ -19,18 +19,17 @@ case class TestFEvent(task: TaskDef, test: Test[Pure]) extends Event {
 }
 
 object TestFEvent {
-  val status: Test[Pure] => Status = {
-    case effect: Test.Effect[Pure] => status(effect.test)
-    case _: Test.Error             => Status.Error
-    case _: Test.Failure           => Status.Failure
-    case group: Test.Group[Pure] =>
-      group.tests.foldLeft(Status.Success) {
-        case (Status.Error, _)   => Status.Error
-        case (Status.Failure, _) => Status.Failure
-        case (_, test)           => status(test)
-      }
-    case Test.Label(_, test)   => status(test)
-    case Test.Message(_, test) => status(test)
-    case Test.Success          => Status.Success
-  }
+  val status: Test[Pure] => Status = _.fold[Pure, Status](
+    effect = status,
+    error = _ => Status.Error,
+    failure = _ => Status.Failure,
+    group = _.foldLeft(Status.Success) {
+      case (Status.Error, _)   => Status.Error
+      case (Status.Failure, _) => Status.Failure
+      case (_, test)           => status(test)
+    },
+    label = (_, test) => status(test),
+    message = (_, test) => status(test),
+    success = Status.Success
+  )
 }
