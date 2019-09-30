@@ -23,7 +23,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
-        "org.typelevel" %%% "cats-effect" % "2.0.0-M4" ::
+        "org.typelevel" %%% "cats-effect" % "2.0.0" ::
         Nil,
     name := "testf-core",
     testFrameworks += new TestFramework(
@@ -37,7 +37,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-js" %% "scalajs-test-interface" % "0.6.28" ::
+      "org.scala-js" %% "scalajs-test-interface" % "0.6.29" ::
         Nil
   )
 
@@ -65,7 +65,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.scalacheck" %%% "scalacheck" % "1.14.0" ::
+      "org.scalacheck" %%% "scalacheck" % "1.14.2" ::
         Nil,
     name := "testf-scalacheck",
     sourceGenerators in Compile += Def.task {
@@ -90,7 +90,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-laws" % "2.0.0-M4" ::
+      "org.typelevel" %%% "cats-laws" % "2.0.0" ::
         Nil,
     name := "testf-laws",
     testFrameworks += new TestFramework(
