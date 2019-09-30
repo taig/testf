@@ -50,7 +50,7 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-lang" % "scala-reflect" % "2.13.0" ::
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value ::
         Nil
   )
   .dependsOn(core)
