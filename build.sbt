@@ -1,7 +1,5 @@
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-crossScalaVersions in ThisBuild := Seq("2.12.8", scalaVersion.value)
-
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
