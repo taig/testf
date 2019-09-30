@@ -96,8 +96,8 @@ lazy val hedgehog = project
   .settings(myMavenRepoPublishSettings)
   .settings(
     libraryDependencies ++=
-      "hedgehog" %% "hedgehog-core" % "c36b298d5e61ecaf68f8b607c4578bc65aaaa3f7" ::
-        "hedgehog" %% "hedgehog-runner" % "c36b298d5e61ecaf68f8b607c4578bc65aaaa3f7" ::
+      "hedgehog" %% "hedgehog-core" % "0.1.0" ::
+        "hedgehog" %% "hedgehog-runner" % "0.1.0" ::
         Nil,
     name := "testf-hedgehog",
     resolvers += Resolver.url(
