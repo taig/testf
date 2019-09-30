@@ -6,15 +6,15 @@ lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings ++ releaseSettings)
   .aggregate(
-    autoJVM,
-    autoJS,
-    coreJVM,
-    coreJS,
+    auto.jvm,
+    auto.js,
+    core.jvm,
+    core.js,
     hedgehog,
-    lawsJVM,
-    lawsJS,
-    scalacheckJVM,
-    scalacheckJS
+    laws.jvm,
+    laws.js,
+    scalacheck.jvm,
+    scalacheck.js
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
@@ -41,10 +41,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         Nil
   )
 
-lazy val coreJVM = core.jvm
-
-lazy val coreJS = core.js
-
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
   .settings(myMavenRepoPublishSettings)
@@ -54,11 +50,12 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
       s"${organization.value}.testf.runner.TestFFramework"
     )
   )
+  .jsSettings(
+    libraryDependencies ++=
+      "org.scala-lang" % "scala-reflect" % "2.13.0" ::
+        Nil
+  )
   .dependsOn(core)
-
-lazy val autoJVM = auto.jvm
-
-lazy val autoJS = auto.js
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -81,10 +78,6 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(core)
 
-lazy val scalacheckJVM = scalacheck.jvm
-
-lazy val scalacheckJS = scalacheck.js
-
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
   .settings(myMavenRepoPublishSettings)
@@ -98,10 +91,6 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
     )
   )
   .dependsOn(scalacheck)
-
-lazy val lawsJVM = laws.jvm
-
-lazy val lawsJS = laws.js
 
 lazy val hedgehog = project
   .settings(myMavenRepoPublishSettings)
@@ -119,4 +108,4 @@ lazy val hedgehog = project
       s"${organization.value}.testf.runner.TestFFramework"
     )
   )
-  .dependsOn(coreJVM)
+  .dependsOn(core.jvm)
