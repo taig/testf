@@ -16,40 +16,34 @@ object WebsiteStatusTest extends TestF {
     }
 
   val typelevel: Test[IO] =
-    Test.label(
-      "typelevel",
+    Test.label("typelevel") {
       Test.eval(
         request("https://typelevel.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
-    )
+    }
 
   val scalaLang: Test[IO] =
-    Test.label(
-      "scala",
+    Test.label("scala") {
       Test.eval(
         request("https://www.scala-lang.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
-    )
+    }
 
   val github: Test[IO] =
-    Test.label(
-      "github",
+    Test.label("github") {
       Test.eval(
         request("https://github.com/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
-    )
+    }
 
   override val suite: IO[Test[Pure]] =
     Compiler[IO].compile(
-      Test.label(
-        "WebsiteStatusTest",
-        Test.of(typelevel, scalaLang, github)
-      )
+      Test.label("WebsiteStatusTest")(Test.of(typelevel, scalaLang, github))
     )
 }

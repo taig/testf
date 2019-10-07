@@ -51,7 +51,7 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
   }
 
   final def ~(description: String): Test[F] =
-    Test.label(description, this)
+    Test.label(description)(this)
 
   final def &[G[α] >: F[α]](test: Test[G]): Test[G] =
     (this, test) match {
@@ -88,16 +88,16 @@ object Test extends Assertion {
   def fallback[F[_]](description: String, test: Test[F]): Test[F] =
     test match {
       case label: Label[F] => label
-      case test            => label(description, test)
+      case test            => label(description)(test)
     }
 
   def group[F[_]](tests: List[Test[F]]): Test[F] =
     Test.Group(tests)
 
-  def label[F[_]](description: String, test: Test[F]): Test[F] =
+  def label[F[_]](description: String)(test: Test[F]): Test[F] =
     Test.Label(description, test)
 
-  def message[F[_]](description: String, test: Test[F]): Test[F] =
+  def message[F[_]](description: String)(test: Test[F]): Test[F] =
     Test.Message(description, test)
 
   def of[F[_]](tests: Test[F]*): Test[F] = group(tests.toList)
@@ -105,7 +105,7 @@ object Test extends Assertion {
   val success: Test[Pure] = Test.Success
 
   def success(description: String): Test[Pure] =
-    label(description, success)
+    label(description)(success)
 
   def error(message: String): Test[Pure] = Error(message)
 

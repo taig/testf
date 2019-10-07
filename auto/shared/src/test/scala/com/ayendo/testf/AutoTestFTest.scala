@@ -9,5 +9,5 @@ object AutoTestFTest {
   def defTest: Test[Pure] = Test.success("val")
 
   val ioTest: Test[IO] =
-    Test.label("IO val", Test.eval[IO](IO.pure(Test.success)))
+    Test.label("IO val")(Test.eval[IO](IO.pure(Test.success)))
 }

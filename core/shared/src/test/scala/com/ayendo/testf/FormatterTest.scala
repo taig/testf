@@ -15,13 +15,12 @@ object FormatterTest extends TestF {
 
     val failure: Test[Pure] = Test.failure(exception)
 
-    def label(test: Test[Pure]): Test[Pure] = Test.label("foobar", test)
+    def label(test: Test[Pure]): Test[Pure] = Test.label("foobar")(test)
 
     val success: Test[Pure] = Test.success
   }
 
-  val basic: Test[Pure] = Test.label(
-    "basic",
+  val basic: Test[Pure] = Test.label("basic") {
     Test.of(
       Test.equal(
         Formatter.test(Fixture.error),
@@ -36,10 +35,9 @@ object FormatterTest extends TestF {
         "✓ success"
       ) ~ "success"
     )
-  )
+  }
 
-  val label: Test[Pure] = Test.label(
-    "label",
+  val label: Test[Pure] = Test.label("label") {
     Test.of(
       Test.equal(
         Formatter.test(Fixture.label(Fixture.error)),
@@ -54,7 +52,7 @@ object FormatterTest extends TestF {
         "✓ foobar"
       ) ~ "success"
     )
-  )
+  }
 
   override def suite: IO[Test[Pure]] =
     Test.of(basic, label) ~ "FormatterTest" compile

@@ -4,8 +4,6 @@ import java.io.{PrintWriter, StringWriter}
 
 import com.ayendo.testf.{Pure, Test}
 
-import scala.annotation.tailrec
-
 object Formatter {
   def test(value: Test[Pure], color: Boolean = false): String =
     this.test(color, level = 0)(value)
@@ -25,7 +23,7 @@ object Formatter {
     },
     label = { (description, test) =>
       test.fold[Pure, String](
-        effect = test => "???",
+        effect = (test: Test[Pure]) => "???",
         error = message =>
           Text.padLeft(
             error(description, Some(message), color),
@@ -49,12 +47,12 @@ object Formatter {
         },
         label = { (additional, test) =>
           Formatter.test(color, level)(
-            Test.label(description + ", " + additional, test)
+            Test.label(description + ", " + additional)(test)
           )
         },
         message = { (additional, test) =>
           Formatter.test(color, level)(
-            Test.label(description + ", " + additional, test)
+            Test.label(description + ", " + additional)(test)
           )
         },
         success = Text.padLeft(success(description, color), columns = level * 2)

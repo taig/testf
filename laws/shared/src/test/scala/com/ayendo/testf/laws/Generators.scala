@@ -36,14 +36,14 @@ object Generators {
       for {
         description <- description
         test <- summon[Test[Pure]]
-      } yield Test.label(description, test)
+      } yield Test.label(description)(test)
     )
 
     val message = Gen.lzy(
       for {
         description <- description
         test <- summon[Test[Pure]]
-      } yield Test.message(description, test)
+      } yield Test.message(description)(test)
     )
 
     val success = description.map(Test.success(_))
