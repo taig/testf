@@ -2,45 +2,44 @@ package com.ayendo.testf
 
 import java.net.{HttpURLConnection, URL}
 
-import cats.effect.{IO, Sync}
-import cats.implicits._
+import cats.effect.IO
 
 object WebsiteStatusTest extends TestF {
-  def request[F[_]](url: String)(implicit F: Sync[F]): F[Int] =
-    F.delay(new URL(url)).flatMap { url =>
-      val open = F.delay(url.openConnection().asInstanceOf[HttpURLConnection])
+  def request(url: String): IO[Int] =
+    IO.delay(new URL(url)).flatMap { url =>
+      val open = IO.delay(url.openConnection().asInstanceOf[HttpURLConnection])
       val load =
-        (connection: HttpURLConnection) => F.delay(connection.getResponseCode)
+        (connection: HttpURLConnection) => IO.delay(connection.getResponseCode)
       val disconnect =
-        (connection: HttpURLConnection) => F.delay(connection.disconnect())
-      F.bracket(open)(load)(disconnect)
+        (connection: HttpURLConnection) => IO.delay(connection.disconnect())
+      open.bracket(load)(disconnect)
     }
 
-  def typelevel[F[_]: Sync]: Test[F] =
+  val typelevel: Test[IO] =
     Test.label(
       "typelevel",
       Test.effect(
-        request[F]("https://typelevel.org/").map { code =>
+        request("https://typelevel.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
     )
 
-  def scalaLang[F[_]: Sync]: Test[F] =
+  val scalaLang: Test[IO] =
     Test.label(
       "scala",
       Test.effect(
-        request[F]("https://www.scala-lang.org/").map { code =>
+        request("https://www.scala-lang.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
     )
 
-  def github[F[_]: Sync]: Test[F] =
+  val github: Test[IO] =
     Test.label(
       "github",
       Test.effect(
-        request[F]("https://github.com/").map { code =>
+        request("https://github.com/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
       )
@@ -50,7 +49,7 @@ object WebsiteStatusTest extends TestF {
     Compiler[IO].compile(
       Test.label(
         "WebsiteStatusTest",
-        Test.of(typelevel[IO], scalaLang[IO], github[IO])
+        Test.of(typelevel, scalaLang, github)
       )
     )
 }

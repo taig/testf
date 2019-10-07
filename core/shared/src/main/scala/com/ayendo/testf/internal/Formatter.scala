@@ -7,7 +7,7 @@ import com.ayendo.testf.{Pure, Test}
 import scala.annotation.tailrec
 
 object Formatter {
-  def test(value: Test[Pure], color: Boolean): String =
+  def test(value: Test[Pure], color: Boolean = false): String =
     this.test(color, level = 0)(value)
 
   def test(
