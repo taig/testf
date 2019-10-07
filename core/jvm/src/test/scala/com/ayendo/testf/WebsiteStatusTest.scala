@@ -18,7 +18,7 @@ object WebsiteStatusTest extends TestF {
   val typelevel: Test[IO] =
     Test.label(
       "typelevel",
-      Test.effect(
+      Test.eval(
         request("https://typelevel.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
@@ -28,7 +28,7 @@ object WebsiteStatusTest extends TestF {
   val scalaLang: Test[IO] =
     Test.label(
       "scala",
-      Test.effect(
+      Test.eval(
         request("https://www.scala-lang.org/").map { code =>
           Test.assert(code == 200, "code != 200")
         }
@@ -38,7 +38,7 @@ object WebsiteStatusTest extends TestF {
   val github: Test[IO] =
     Test.label(
       "github",
-      Test.effect(
+      Test.eval(
         request("https://github.com/").map { code =>
           Test.assert(code == 200, "code != 200")
         }

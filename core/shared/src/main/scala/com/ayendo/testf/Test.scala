@@ -20,8 +20,8 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
   final def mapK[G[α] >: F[α], H[_]](
       f: G ~> H
   )(implicit G: Functor[G]): Test[H] = covary[G] match {
-    case test: Test.Effect[G] =>
-      Test.Effect(f(test.test.map(_.mapK(f))))
+    case test: Test.Eval[G] =>
+      Test.Eval(f(test.test.map(_.mapK(f))))
     case error: Test.Error     => error
     case failure: Test.Failure => failure
     case group: Test.Group[G]  => Test.Group(group.tests.map(_.mapK(f)))
@@ -41,7 +41,7 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
       message: (String, Test[G]) => A,
       success: => A
   ): A = covary[G] match {
-    case test: Test.Effect[G]    => effect(test.test)
+    case test: Test.Eval[G]      => effect(test.test)
     case Test.Error(message)     => error(message)
     case Test.Failure(throwable) => failure(throwable)
     case test: Test.Group[G]     => group(test.tests)
@@ -64,7 +64,7 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
 }
 
 object Test extends Assertion {
-  private final case class Effect[F[_]](test: F[Test[F]]) extends Test[F]
+  private final case class Eval[F[_]](test: F[Test[F]]) extends Test[F]
 
   private final case class Error(message: String) extends Test[Pure]
 
@@ -83,7 +83,7 @@ object Test extends Assertion {
   def assert(predicate: Boolean, message: => String): Test[Pure] =
     if (predicate) success else error(message)
 
-  def effect[F[_]](test: F[Test[F]]): Test[F] = Test.Effect(test)
+  def eval[F[_]](test: F[Test[F]]): Test[F] = Test.Eval(test)
 
   def fallback[F[_]](description: String, test: Test[F]): Test[F] =
     test match {
@@ -117,7 +117,7 @@ object Test extends Assertion {
   implicit val eq: Eq[Test[Pure]] = new Eq[Test[Pure]] {
     override def eqv(x: Test[Pure], y: Test[Pure]): Boolean =
       (x, y) match {
-        case (Effect(_), Effect(_))             => false
+        case (Eval(_), Eval(_))                 => false
         case (Error(x), Error(y))               => x === y
         case (Failure(x), Failure(y))           => x == y
         case (Group(x), Group(y))               => x === y
@@ -130,17 +130,17 @@ object Test extends Assertion {
 
   implicit final class TestPureOps(val test: Test[Pure]) extends AnyVal {
     def children: List[Test[Pure]] = test match {
-      case effect: Effect[Pure] => effect.test.children
-      case error: Error         => List(error)
-      case failure: Failure     => List(failure)
-      case Group(tests)         => tests.flatMap(_.children)
-      case Label(_, test)       => test.children
-      case Message(_, test)     => test.children
-      case Success              => List(Success)
+      case effect: Eval[Pure] => effect.test.children
+      case error: Error       => List(error)
+      case failure: Failure   => List(failure)
+      case Group(tests)       => tests.flatMap(_.children)
+      case Label(_, test)     => test.children
+      case Message(_, test)   => test.children
+      case Success            => List(Success)
     }
 
     def success: Boolean = test match {
-      case effect: Effect[Pure]  => effect.test.success
+      case effect: Eval[Pure]    => effect.test.success
       case group: Group[Pure]    => group.tests.forall(_.success)
       case Label(_, test)        => test.success
       case Message(_, test)      => test.success
@@ -149,8 +149,8 @@ object Test extends Assertion {
     }
 
     def throwable: Option[Throwable] = test match {
-      case effect: Effect[Pure] => effect.test.throwable
-      case Failure(throwable)   => Some(throwable)
+      case effect: Eval[Pure] => effect.test.throwable
+      case Failure(throwable) => Some(throwable)
       case group: Group[Pure] =>
         group.tests.map(_.throwable).collectFirst {
           case Some(throwable) => throwable
