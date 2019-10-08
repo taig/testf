@@ -80,10 +80,16 @@ object Test extends Assertion {
 
   private final case object Success extends Test[Pure]
 
+  def apply[F[_]](description: String)(test: Test[F]): Test[F] =
+    label(description, test)
+
   def assert(predicate: Boolean, message: => String): Test[Pure] =
     if (predicate) success else error(message)
 
   def eval[F[_]](test: F[Test[F]]): Test[F] = Test.Eval(test)
+
+  def eval[F[_]](description: String)(test: F[Test[F]]): Test[F] =
+    label(description, eval(test))
 
   def fallback[F[_]](description: String, test: Test[F]): Test[F] =
     test match {
