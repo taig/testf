@@ -7,23 +7,22 @@ import org.scalacheck.Gen
 
 object StringTest extends TestF {
   val startsWith: Test[Pure] =
-    Test.label("startsWith", Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) {
-      (a, b) =>
+    Test("startsWith") {
+      Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
         Test.startsWith(a + b, a)
-    })
+      }
+    }
 
   val concatenate: Test[Pure] =
-    Test.label(
-      "concatenate",
+    Test("concatenate") {
       Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-        Test.gte((a + b).length, a.length) ~ "lengthA" |+|
-          Test.gte((a + b).length, b.length) ~ "lengthB"
+        Test("lengthA")(Test.gte((a + b).length, a.length)) &
+          Test("lengthB")(Test.gte((a + b).length, b.length))
       }
-    )
+    }
 
   val substring: Test[Pure] =
-    Test.label(
-      "substring",
+    Test("substring") {
       Test.check3(
         Gen.alphaNumStr,
         Gen.alphaNumStr,
@@ -31,8 +30,8 @@ object StringTest extends TestF {
       ) { (a, b, c) =>
         Test.equal((a + b + c).substring(a.length, a.length + b.length), b)
       }
-    )
+    }
 
   override val suite: IO[Test[Pure]] =
-    Test.of(startsWith, concatenate, substring).compile
+    Test("StringTest")(startsWith, concatenate, substring).compile
 }

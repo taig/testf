@@ -17,13 +17,13 @@ object Generators {
       for {
         description <- description
         message <- summon[String]
-      } yield Test.error(message) ~ description
+      } yield Test(description)(Test.error(message))
 
     val failure =
       for {
         description <- description
         throwable <- summon[Throwable]
-      } yield Test.failure(throwable) ~ description
+      } yield Test(description)(Test.failure(throwable))
 
     val group = Gen.lzy(
       for {

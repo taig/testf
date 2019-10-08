@@ -50,9 +50,6 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
     case Test.Success            => success
   }
 
-  final def ~(description: String): Test[F] =
-    Test.label(description, this)
-
   final def &[G[α] >: F[α]](test: Test[G]): Test[G] =
     (this, test) match {
       case (x: Test.Group[F], y: Test.Group[G]) =>
@@ -80,8 +77,11 @@ object Test extends Assertion {
 
   private final case object Success extends Test[Pure]
 
-  def apply[F[_]](description: String)(test: Test[F]): Test[F] =
-    label(description, test)
+  def apply[F[_]](
+      description: String
+  )(test: Test[F], tests: Test[F]*): Test[F] =
+    if (tests.isEmpty) label(description, test)
+    else label(description, group(test +: tests.toList))
 
   def assert(predicate: Boolean, message: => String): Test[Pure] =
     if (predicate) success else error(message)
