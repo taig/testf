@@ -50,7 +50,7 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
     case Test.Success            => success
   }
 
-  final def &[G[α] >: F[α]](test: Test[G]): Test[G] =
+  final def and[G[α] >: F[α]](test: Test[G]): Test[G] =
     (this, test) match {
       case (x: Test.Group[F], y: Test.Group[G]) =>
         Test.Group(x.tests ++ y.tests)
@@ -58,6 +58,8 @@ sealed abstract class Test[+F[_]] extends Product with Serializable {
       case (test, y: Test.Group[G]) => Test.Group(test +: y.tests)
       case (x, y)                   => Test.of(x, y)
     }
+
+  final def &[G[α] >: F[α]](test: Test[G]): Test[G] = this and test
 }
 
 object Test extends Assertion {
