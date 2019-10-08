@@ -20,9 +20,9 @@ object Compiler {
         failure = throwable => IO.pure(Test.failure(throwable)),
         group = _.traverse(compile).map(Test.group),
         label =
-          (description, test) => compile(test).map(Test.label(description)),
-        message =
-          (description, test) => compile(test).map(Test.message(description)),
+          (description, test) => compile(test).map(Test.label(description, _)),
+        message = (description, test) =>
+          compile(test).map(Test.message(description, _)),
         success = IO.pure(Test.success)
       )
   }
@@ -35,9 +35,9 @@ object Compiler {
         failure = throwable => IO.pure(Test.failure(throwable)),
         group = _.traverse(compile).map(Test.group),
         label =
-          (description, test) => compile(test).map(Test.label(description)),
-        message =
-          (description, test) => compile(test).map(Test.message(description)),
+          (description, test) => compile(test).map(Test.label(description, _)),
+        message = (description, test) =>
+          compile(test).map(Test.message(description, _)),
         success = IO.pure(Test.success)
       )
   }
@@ -50,9 +50,9 @@ object Compiler {
         failure = throwable => IO.pure(Test.failure(throwable)),
         group = _.traverse(compile).map(Test.group),
         label =
-          (description, test) => compile(test).map(Test.label(description)),
-        message =
-          (description, test) => compile(test).map(Test.message(description)),
+          (description, test) => compile(test).map(Test.label(description, _)),
+        message = (description, test) =>
+          compile(test).map(Test.message(description, _)),
         success = IO.pure(Test.success)
       )
   }

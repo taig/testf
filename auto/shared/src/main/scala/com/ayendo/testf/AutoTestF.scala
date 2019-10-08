@@ -50,7 +50,7 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
 
           val suite: cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]] = {
             ${filter(c)(body.toList, label)}
-              .map(com.ayendo.testf.Test.label(${name.encodedName.toString})(_))
+              .map(com.ayendo.testf.Test.label(${name.encodedName.toString}, _))
           }
         }
         """

@@ -8,7 +8,7 @@ import org.typelevel.discipline.Laws
 trait LawsAssertion {
   final def verify(ruleSet: Laws#RuleSet): Test[Pure] = {
     val checks = ruleSet.all.properties.map {
-      case (id, prop) => Test.label(id)(Test.check(prop))
+      case (id, prop) => Test.label(id, Test.check(prop))
     }
 
     Semigroup[Test[Pure]]
@@ -17,7 +17,7 @@ trait LawsAssertion {
   }
 
   final def verify(description: String, ruleSet: Laws#RuleSet): Test[Pure] =
-    Test.label(description)(verify(ruleSet))
+    Test.label(description, verify(ruleSet))
 }
 
 object LawsAssertion extends LawsAssertion

@@ -29,6 +29,6 @@ object ScalacheckAssertion extends ScalacheckAssertion {
     }
 
     val result = org.scalacheck.Test.check(parameters, prop(p))
-    if (result.passed) test else Test.message(Pretty.pretty(result))(test)
+    if (result.passed) test else Test.message(Pretty.pretty(result), test)
   }
 }
