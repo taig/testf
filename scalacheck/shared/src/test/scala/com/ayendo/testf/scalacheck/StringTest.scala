@@ -3,35 +3,36 @@ package com.ayendo.testf.scalacheck
 import cats.effect.IO
 import cats.implicits._
 import com.ayendo.testf._
+import com.ayendo.testf.dsl._
 import org.scalacheck.Gen
 
 object StringTest extends TestF {
-  val startsWith: Test[Pure] =
-    Test("startsWith") {
+  val start: Test[Pure] =
+    test("startsWith") {
       Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-        Test.startsWith(a + b, a)
+        startsWith(a)(a + b)
       }
     }
 
   val concatenate: Test[Pure] =
-    Test("concatenate") {
+    test("concatenate") {
       Test.check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-        Test("lengthA")(Test.gte((a + b).length, a.length)) &
-          Test("lengthB")(Test.gte((a + b).length, b.length))
+        test("lengthA")(gte(a.length)((a + b).length)) &
+          test("lengthB")(gte(b.length)((a + b).length))
       }
     }
 
   val substring: Test[Pure] =
-    Test("substring") {
+    test("substring") {
       Test.check3(
         Gen.alphaNumStr,
         Gen.alphaNumStr,
         Gen.alphaNumStr
       ) { (a, b, c) =>
-        Test.equal((a + b + c).substring(a.length, a.length + b.length), b)
+        equal(b)((a + b + c).substring(a.length, a.length + b.length))
       }
     }
 
   override val suite: IO[Test[Pure]] =
-    Test("StringTest")(startsWith, concatenate, substring).compile
+    test("StringTest")(start, concatenate, substring).compile
 }

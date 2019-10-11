@@ -86,12 +86,12 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
     c.Expr {
       q"""cats.instances.list.catsStdInstancesForList
             .sequence(List[cats.effect.IO[com.ayendo.testf.Test[com.ayendo.testf.Pure]]](..$tests))
-            .map(com.ayendo.testf.Test.group)"""
+            .map(com.ayendo.testf.dsl.allOf)"""
     }
   }
 
   def autoLabel(c: blackbox.Context)(term: c.TermName): c.Tree = {
     import c.universe._
-    q"com.ayendo.testf.Test.fallback(${term.decodedName.toString}, $term)"
+    q"com.ayendo.testf.Test.fallback(${term.decodedName.toString})($term)"
   }
 }

@@ -4,47 +4,51 @@ import cats._
 import cats.implicits._
 
 trait Assertion {
-  def equal[A: Eq: Show](value: A, expected: A): Test[Pure] =
-    Test.assert(
-      value === expected,
-      show"'$value' is not equal to expected '$expected'"
+  def assert(predicate: Boolean, message: => String): Test[Pure] =
+    if (predicate) Test.success else Test.error(message)
+
+  def equal[A: Eq: Show](expected: A)(actual: A): Test[Pure] =
+    assert(
+      actual === expected,
+      show"'$actual' is not equal to expected '$expected'"
     )
 
-  def equalUniversal[A](value: A, expected: A): Test[Pure] =
-    equal[A](value, expected)(Eq.fromUniversalEquals, Show.fromToString)
+  def equalUniversal[A](expected: A)(actual: A): Test[Pure] =
+    equal[A](expected)(actual)(Eq.fromUniversalEquals, Show.fromToString)
 
-  def endsWith(value: String, expected: String): Test[Pure] =
-    Test.assert(
-      value endsWith expected,
-      show"'$value' does not end with '$expected'"
+  def endsWith(ending: String)(actual: String): Test[Pure] =
+    assert(
+      actual endsWith ending,
+      show"'$actual' does not end with '$ending'"
     )
 
-  def gt[A: PartialOrder: Show](value: A, expected: A): Test[Pure] =
-    Test.assert(value > expected, s"'$value' is not > '$expected'")
+  def gt[A: PartialOrder: Show](expected: A)(actual: A): Test[Pure] =
+    assert(actual > expected, s"'$actual' is not > '$expected'")
 
-  def gte[A: PartialOrder: Show](value: A, expected: A): Test[Pure] =
-    Test.assert(value >= expected, s"'$value' is not >= '$expected'")
+  def gte[A: PartialOrder: Show](expected: A)(actual: A): Test[Pure] =
+    assert(actual >= expected, s"'$actual' is not >= '$expected'")
 
   def isEmpty[A: Monoid: Eq: Show](value: A): Test[Pure] =
-    Test.assert(value.isEmpty, show"'$value' is not empty")
+    assert(value.isEmpty, show"'$value' is not empty")
 
-  def lt[A: PartialOrder: Show](value: A, expected: A): Test[Pure] =
-    Test.assert(value < expected, s"'$value' is not < '$expected'")
+  def lt[A: PartialOrder: Show](expected: A)(actual: A): Test[Pure] =
+    assert(actual < expected, s"'$actual' is not < '$expected'")
 
-  def lte[A: PartialOrder: Show](value: A, expected: A): Test[Pure] =
-    Test.assert(value <= expected, s"'$value' is not <= '$expected'")
+  def lte[A: PartialOrder: Show](expected: A)(actual: A): Test[Pure] =
+    assert(actual <= expected, s"'$actual' is not <= '$expected'")
 
   def notEmpty[A: Monoid: Eq: Show](value: A): Test[Pure] =
-    Test.assert(!value.isEmpty, show"'$value' is empty")
+    assert(!value.isEmpty, show"'$value' is empty")
 
-  def startsWith(value: String, expected: String): Test[Pure] =
-    Test.assert(
-      value startsWith expected,
-      show"'$value' does not start with '$expected'"
+  def startsWith(start: String)(actual: String): Test[Pure] =
+    assert(
+      actual startsWith start,
+      show"'$actual' does not start with '$start'"
     )
 
+  // TODO are those useful?
   def when[F[_]](condition: Boolean)(test: Test[F]): Test[F] =
-    if (condition) test else Test.success
+    if (condition) test else Test.empty
 
   def unless[F[_]](condition: Boolean)(test: Test[F]): Test[F] =
     when(!condition)(test)

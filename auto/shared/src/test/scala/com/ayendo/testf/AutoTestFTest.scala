@@ -1,13 +1,13 @@
 package com.ayendo.testf
 
 import cats.effect.IO
+import com.ayendo.testf.dsl._
 
 @AutoTestF
 object AutoTestFTest {
-  val valTest: Test[Pure] = Test.success
+  val valTest: Test[Pure] = success
 
-  def defTest: Test[Pure] = Test.success("val")
+  def defTest: Test[Pure] = success("val")
 
-  val ioTest: Test[IO] =
-    Test.label("IO val", Test.eval[IO](IO.pure(Test.success)))
+  val ioTest: Test[IO] = eval("IO val")(IO.pure(success))
 }

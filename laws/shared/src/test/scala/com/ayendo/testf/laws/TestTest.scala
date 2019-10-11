@@ -3,6 +3,7 @@ package com.ayendo.testf.laws
 import cats.effect.IO
 import cats.kernel.laws.discipline.{EqTests, SemigroupTests}
 import com.ayendo.testf._
+import com.ayendo.testf.dsl._
 
 object TestTest extends TestF {
   import Generators._
@@ -13,5 +14,5 @@ object TestTest extends TestF {
     Test.verify("SemigroupLaws", SemigroupTests[Test[Pure]].semigroup)
 
   override val suite: IO[Test[Pure]] =
-    Test("TestTest")(eqLaws, semigroupLaws).compile
+    test("TestTest")(eqLaws, semigroupLaws).compile
 }

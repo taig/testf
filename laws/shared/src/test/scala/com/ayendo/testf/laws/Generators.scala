@@ -13,17 +13,9 @@ object Generators {
   }
 
   implicit val arbitraryTest: Arbitrary[Test[Pure]] = {
-    val error =
-      for {
-        description <- description
-        message <- summon[String]
-      } yield Test(description)(Test.error(message))
+    val error = summon[String].map(Test.error)
 
-    val failure =
-      for {
-        description <- description
-        throwable <- summon[Throwable]
-      } yield Test(description)(Test.failure(throwable))
+    val failure = summon[Throwable].map(Test.failure)
 
     val group = Gen.lzy(
       for {
@@ -46,24 +38,25 @@ object Generators {
       } yield Test.message(description, test)
     )
 
-    val success = description.map(Test.success(_))
+    val success = Gen.const(Test.success)
 
     val generator = Gen.oneOf(error, failure, group, label, message, success)
 
     Arbitrary(generator)
   }
 
-  implicit val cogenTest: Cogen[Test[Pure]] =
-    Cogen { (seed, test) =>
-      test.fold[Pure, Seed](
-        effect = (test: Test[Pure]) => Cogen.perturb(seed, test),
-        error = Cogen.perturb(seed, _),
-        failure = Cogen.perturb(seed, _),
-        group = Cogen.perturb(seed, _),
-        label = (description, test) => Cogen.perturb(seed, (description, test)),
-        message =
-          (description, test) => Cogen.perturb(seed, (description, test)),
-        success = seed
-      )
-    }
+  implicit val cogenTest: Cogen[Test[Pure]] = Cogen({
+    case (seed, Test.And(tests))         => Cogen.perturb(seed, tests)
+    case (seed, test: Test.Eval[Pure])   => Cogen.perturb(seed, test.test)
+    case (seed, Test.Error(message))     => Cogen.perturb(seed, message)
+    case (seed, Test.Failure(throwable)) => Cogen.perturb(seed, throwable)
+    case (seed, Test.Label(description, test)) =>
+      Cogen.perturb(seed, (description, test))
+    case (seed, Test.Message(description, test)) =>
+      Cogen.perturb(seed, (description, test))
+    case (seed, Test.Not(test))  => Cogen.perturb(seed, test)
+    case (seed, Test.Or(tests))  => Cogen.perturb(seed, tests)
+    case (seed, Test.Skip(test)) => Cogen.perturb(seed, test)
+    case (seed, Test.Success)    => seed
+  }: (Seed, Test[Pure]) => Seed)
 }

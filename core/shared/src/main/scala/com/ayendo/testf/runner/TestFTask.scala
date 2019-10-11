@@ -1,7 +1,5 @@
 package com.ayendo.testf.runner
 
-import java.io.{PrintWriter, StringWriter}
-
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
@@ -42,11 +40,8 @@ final class TestFTask(
 
   def recover(loggers: Array[Logger])(throwable: Throwable): Unit =
     loggers.foreach { logger =>
-      val writer = new StringWriter()
-      throwable.printStackTrace(new PrintWriter(writer))
-
       logger.error(s"Failed to run test suite ${task.fullyQualifiedName()}")
-      logger.error(writer.toString)
+      logger.trace(throwable)
     }
 }
 
@@ -62,11 +57,11 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestF])
-      tests <- Async.liftIO(testF.suite).map(_.root)
+      test <- Async.liftIO(testF.suite)
       _ <- lock.take
-      _ <- tests.traverse(log[F](loggers, _))
+      _ <- log[F](loggers, test)
       _ <- lock.put(true)
-      events = tests.flatMap(_.children).map(TestFEvent(task, _))
+      events = test.children.map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
 
