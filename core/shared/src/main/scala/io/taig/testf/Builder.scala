@@ -1,5 +1,8 @@
 package io.taig.testf
 
+import cats.Show
+import cats.implicits._
+
 trait Builder {
   def and[F[_]](tests: List[Test[F]]): Test[F] = Test.And(tests)
 
@@ -24,6 +27,18 @@ trait Builder {
   def error(message: String): Test[Pure] = Test.Error(message)
 
   def failure(throwable: Throwable): Test[Pure] = Test.Failure(throwable)
+
+  def isRight[F[_], A: Show](value: Either[A, Test[F]]): Test[F] =
+    value match {
+      case Left(value) => Test.error(show"Left($value) instead of a Right")
+      case Right(test) => test
+    }
+
+  def isLeft[F[_], A: Show](value: Either[Test[F], A]): Test[F] =
+    value match {
+      case Left(test)   => test
+      case Right(value) => Test.error(show"Right($value) instead of a Left")
+    }
 
   /**
     * Create a `Test` that succeeds when all of the given `tests` succeed
