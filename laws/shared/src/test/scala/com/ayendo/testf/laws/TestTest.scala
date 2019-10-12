@@ -4,9 +4,11 @@ import cats.effect.IO
 import cats.kernel.laws.discipline.{EqTests, SemigroupTests}
 import com.ayendo.testf._
 import com.ayendo.testf.dsl._
+import com.ayendo.testf.laws.Cogens.cogenTest
+import org.scalacheck.Arbitrary
 
 object TestTest extends TestF {
-  import Generators._
+  implicit val arbitrary: Arbitrary[Test[Pure]] = Arbitrary(Generators.test)
 
   val eqLaws: Test[Pure] = Test.verify("EqLaws", EqTests[Test[Pure]].eqv)
 
