@@ -5,7 +5,7 @@ stages:
 
 variables:
   CONTAINER_REGISTRY: registry.gitlab.com
-  CONTAINER_IMAGE: $CONTAINER_REGISTRY/ayendo/testf
+  CONTAINER_IMAGE: $CONTAINER_REGISTRY/taig-github/testf
   DOCKER_DRIVER: overlay2
 
 docker:
@@ -24,9 +24,11 @@ test:
   image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
   script:
     - sbt -Dmode=strict scalafmtCheckAll coverage test coverageReport coverageAggregate publishLocal
+    - mv target/scala-2.13/scoverage-report/ coverage/
   artifacts:
+    expire_in: 1 month
     paths:
-      - /builds/ayendo/testf/target/scala-2.13/
+      - coverage/
 
 
 publish:
@@ -36,4 +38,4 @@ publish:
     - master
     - tags
   script:
-    - sbt +publish
+    - sbt publishAndRelease

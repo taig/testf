@@ -1,12 +1,11 @@
-FROM        openjdk:8u191-jdk-alpine3.8
+FROM        openjdk:8u191-jdk-alpine3.9
 
-RUN         apk update
-RUN         apk add --no-cache bash nodejs
+RUN         apk upgrade --update
+RUN         apk add --no-cache bash build-base git nodejs
 
 # Install sbt
-RUN         apk add --no-cache --virtual=build-dependencies
-RUN         wget -O /usr/local/bin/sbt https://git.io/sbt && chmod 0755 /usr/local/bin/sbt
-RUN         apk del build-dependencies
+RUN         wget -O /usr/local/bin/sbt https://git.io/sbt
+RUN         chmod 0755 /usr/local/bin/sbt
 
 # Cache sbt
 RUN         mkdir -p \
