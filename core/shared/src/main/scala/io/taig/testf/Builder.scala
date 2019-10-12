@@ -28,18 +28,6 @@ trait Builder {
 
   def failure(throwable: Throwable): Test[Pure] = Test.Failure(throwable)
 
-  def isRight[F[_], A: Show](value: Either[A, Test[F]]): Test[F] =
-    value match {
-      case Left(value) => Test.error(show"Left($value) instead of a Right")
-      case Right(test) => test
-    }
-
-  def isLeft[F[_], A: Show](value: Either[Test[F], A]): Test[F] =
-    value match {
-      case Left(test)   => test
-      case Right(value) => Test.error(show"Right($value) instead of a Left")
-    }
-
   /**
     * Create a `Test` that succeeds when all of the given `tests` succeed
     */
@@ -53,6 +41,24 @@ trait Builder {
   )(test: Test[F], tests: Test[F]*): Test[F] =
     if (tests.isEmpty) label(description, test)
     else label(description, allOf(test +: tests: _*))
+
+  def testRight[F[_], A: Show](value: Either[A, Test[F]]): Test[F] =
+    value match {
+      case Left(value) => Test.error(show"Left($value) instead of a Right")
+      case Right(test) => test
+    }
+
+  def testLeft[F[_], A: Show](value: Either[Test[F], A]): Test[F] =
+    value match {
+      case Left(test)   => test
+      case Right(value) => Test.error(show"Right($value) instead of a Left")
+    }
+
+  def testSome[F[_]](value: Option[Test[F]]): Test[F] =
+    value match {
+      case Some(test) => test
+      case None       => Test.error(show"None instead of a Some")
+    }
 
   /**
     * Lift a `F[Test[F]]` into `Test[F]` with a label
