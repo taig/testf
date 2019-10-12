@@ -2,7 +2,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val testf = project
   .in(file("."))
-  .settings(noPublishSettings ++ releaseSettings)
+  .settings(noPublishSettings)
   .aggregate(
     auto.jvm,
     auto.js,
@@ -17,13 +17,12 @@ lazy val testf = project
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .settings(myMavenRepoPublishSettings)
+  .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
       "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
         "org.typelevel" %%% "cats-effect" % "2.0.0" ::
         Nil,
-    name := "testf-core",
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestFFramework"
     )
@@ -41,9 +40,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .settings(myMavenRepoPublishSettings)
+  .settings(sonatypePublishSettings)
   .settings(
-    name := "testf-auto",
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestFFramework"
     )
@@ -57,12 +55,11 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .settings(myMavenRepoPublishSettings)
+  .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
       "org.scalacheck" %%% "scalacheck" % "1.14.2" ::
         Nil,
-    name := "testf-scalacheck",
     sourceGenerators in Compile += Def.task {
       val pkg = s"${organization.value}.testf.scalacheck"
       val name = "ScalacheckAssertionN"
@@ -78,12 +75,11 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
 
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .settings(myMavenRepoPublishSettings)
+  .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
       "org.typelevel" %%% "cats-laws" % "2.0.0" ::
         Nil,
-    name := "testf-laws",
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestFFramework"
     )
@@ -91,13 +87,12 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(scalacheck)
 
 lazy val hedgehog = project
-  .settings(myMavenRepoPublishSettings)
+  .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
       "hedgehog" %% "hedgehog-core" % "0.1.0" ::
         "hedgehog" %% "hedgehog-runner" % "0.1.0" ::
         Nil,
-    name := "testf-hedgehog",
     resolvers += Resolver.url(
       "hedgehog",
       url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
