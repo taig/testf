@@ -5,7 +5,7 @@ import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
 import io.taig.testf._
-import io.taig.testf.internal.{Formatter, Logging, Reflection}
+import io.taig.testf.internal.{Formatter, Logging, Reflection, Tests}
 import sbt.testing._
 
 final class TestFTask(
@@ -62,7 +62,7 @@ object TestFTask {
       _ <- lock.take
       _ <- log[F](loggers, test)
       _ <- lock.put(true)
-      events = test.covary[Id].children.map(TestFEvent(task, _))
+      events = Tests.children(test).map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
 

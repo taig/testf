@@ -85,11 +85,9 @@ trait Builders {
   def fallback[F[_]: Monad, A](
       description: String
   )(test: Test[F, A]): Test[F, A] =
-    force {
-      test.label.map {
-        case Some(_) => test
-        case None    => label(description, test)
-      }
+    test match {
+      case test: Test.Label[F, A] => test
+      case test                   => label(description, test)
     }
 
   /**

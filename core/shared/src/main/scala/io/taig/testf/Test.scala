@@ -66,48 +66,7 @@ object Test extends Builders {
     }
 
     def |(test: Test[F, A]): Test[F, A] = or(test)
-
-    def label(implicit F: Monad[F]): F[Option[String]] = test match {
-      case And(_)                => none[String].pure[F]
-      case test: Eval[F, A]      => test.test.flatMap(_.label)
-      case Error(_)              => none[String].pure[F]
-      case Failure(_)            => none[String].pure[F]
-      case Label(description, _) => description.some.pure[F]
-      case Message(_, test)      => test.label
-      case Not(test)             => test.label
-      case Or(_)                 => none[String].pure[F]
-      case Skip(test)            => test.label
-      case Success(_)            => none[String].pure[F]
-    }
-
-    def children(implicit F: Monad[F]): F[List[Test[F, A]]] = test match {
-      case And(tests)       => tests.pure[F]
-      case test: Eval[F, A] => test.test.flatMap(_.children)
-      case test: Error      => List(test: Test[F, A]).pure[F]
-      case test: Failure    => List(test: Test[F, A]).pure[F]
-      case Label(_, test)   => test.children
-      case Message(_, test) => test.children
-      case Not(test)        => test.children
-      case Or(tests)        => tests.pure[F]
-      case Skip(_)          => List.empty[Test[F, A]].pure[F]
-      case test: Success[A] => List(test: Test[F, A]).pure[F]
-    }
-
-    def throwable(implicit F: Monad[F]): F[Option[Throwable]] = test match {
-      case And(tests)         => tests.collectFirstSomeM(_.throwable)
-      case test: Eval[F, A]   => test.test.flatMap(_.throwable)
-      case Error(_)           => none[Throwable].pure[F]
-      case Failure(throwable) => throwable.some.pure[F]
-      case Label(_, test)     => test.throwable
-      case Message(_, test)   => test.throwable
-      case Not(test)          => test.throwable
-      case Or(tests)          => tests.collectFirstSomeM(_.throwable)
-      case Skip(_)            => none[Throwable].pure[F]
-      case Success(_)         => none[Throwable].pure[F]
-    }
   }
-
-  final implicit class TestPureOps[A](val test: Test[Pure, A]) extends AnyVal {}
 
   implicit def monad[F[_]: Functor]: Monad[Test[F, *]] =
     new Monad[Test[F, *]] {

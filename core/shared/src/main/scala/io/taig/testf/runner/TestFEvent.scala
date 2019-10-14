@@ -3,6 +3,7 @@ package io.taig.testf.runner
 import cats.Id
 import io.taig.testf._
 import io.taig.testf.Status
+import io.taig.testf.internal.Tests
 import sbt.testing.{Status => SbtStatus, _}
 
 case class TestFEvent(task: TaskDef, test: Test[Id, Unit]) extends Event {
@@ -23,8 +24,7 @@ case class TestFEvent(task: TaskDef, test: Test[Id, Unit]) extends Event {
     }
 
   override val throwable: OptionalThrowable =
-    test
-      .covary[Id]
-      .throwable
+    Tests
+      .throwable(test)
       .fold(new OptionalThrowable())(new OptionalThrowable(_))
 }
