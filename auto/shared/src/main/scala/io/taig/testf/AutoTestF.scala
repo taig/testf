@@ -48,7 +48,7 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
         $mods object $name extends ..$parent { $self =>
           ..$body
 
-          val suite: cats.effect.IO[io.taig.testf.Test[io.taig.testf.Pure]] = {
+          val suite: cats.effect.IO[io.taig.testf.Test[io.taig.testf.Pure, Unit]] = {
             ${filter(c)(body.toList, label)}
               .map(io.taig.testf.Test.label(${name.encodedName.toString}, _))
           }
@@ -62,10 +62,10 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
 
   def filter(
       c: blackbox.Context
-  )(body: List[c.Tree], label: Boolean): c.Expr[IO[Test[IO]]] = {
+  )(body: List[c.Tree], label: Boolean): c.Expr[IO[Assertion]] = {
     import c.universe._
 
-    val test = typeOf[Test[IO]].typeSymbol
+    val test = typeOf[Test[IO, Unit]].typeSymbol
 
     val tests = body
       .collect { case field: ValOrDefDef if field.tpt.nonEmpty => field }
@@ -77,7 +77,7 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
         val tpt = c.typecheck(q"??? : ${field.tpt}").tpe.asInstanceOf[TypeRef]
         if (tpt.typeSymbol == test) {
           val test = if (label) autoLabel(c)(field.name) else q"${field.name}"
-          val tq"$name[$f]" = field.tpt
+          val tq"$name[$f, Unit]" = field.tpt
           Some((f, test))
         } else None
       }
@@ -85,7 +85,7 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
 
     c.Expr {
       q"""cats.instances.list.catsStdInstancesForList
-            .sequence(List[cats.effect.IO[io.taig.testf.Test[io.taig.testf.Pure]]](..$tests))
+            .sequence(List[cats.effect.IO[io.taig.testf.Test[io.taig.testf.Pure, Unit]]](..$tests))
             .map(io.taig.testf.dsl.allOf)"""
     }
   }

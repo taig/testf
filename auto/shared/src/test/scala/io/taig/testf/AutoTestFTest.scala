@@ -5,9 +5,9 @@ import io.taig.testf.dsl._
 
 @AutoTestF
 object AutoTestFTest {
-  val valTest: Test[Pure] = success
+  val valTest: Test[Pure, Unit] = unit
 
-  def defTest: Test[Pure] = success("val")
+  def defTest: Test[Pure, Unit] = success("val")
 
-  val ioTest: Test[IO] = eval("IO val")(IO.pure(success))
+  val ioTest: Test[IO, Unit] = force("IO val")(IO.pure(unit))
 }

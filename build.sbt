@@ -61,7 +61,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
       "org.scalacheck" %%% "scalacheck" % "1.14.2" ::
         Nil,
     sourceGenerators in Compile += Def.task {
-      val pkg = s"${organization.value}.testf.scalacheck"
+      val pkg = s"${organization.value}.testf"
       val name = "ScalacheckAssertionN"
       val file = (sourceManaged in Compile).value / s"$name.scala"
       IO.write(file, ScalacheckGenerator(pkg, name))

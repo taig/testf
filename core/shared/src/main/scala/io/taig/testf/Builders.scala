@@ -22,6 +22,9 @@ trait Builders {
 
   def force[F[_], A](value: F[Test[F, A]]): Test[F, A] = Test.Eval[F, A](value)
 
+  def force[F[_], A](description: String)(value: F[Test[F, A]]): Test[F, A] =
+    label(description, force(value))
+
   def fromRight[A: Show, B](either: Either[A, B]): Test[Pure, B] =
     either match {
       case Left(value)  => error(show"Left($value), but expected a Right")

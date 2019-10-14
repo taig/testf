@@ -9,7 +9,7 @@ object Generators {
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
 
-  val test: Gen[Test[Pure]] = {
+  val test: Gen[Assertion] = {
     val error = description.map(Test.error)
 
     val failure = Arbitrary.arbitrary[Throwable].map(Test.failure)
@@ -35,7 +35,7 @@ object Generators {
       } yield Test.message(description, test)
     )
 
-    val success = Gen.const(Test.success)
+    val success = Gen.const(Test.unit)
 
     Gen.oneOf(error, failure, group, label, message, success)
   }

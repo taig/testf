@@ -7,8 +7,8 @@ import io.taig.testf._
 import io.taig.testf.dsl._
 
 object OptionTest extends TestF {
-  val monadLaws: Test[Pure] =
-    Test.verify("MonadLaws", MonadTests[Option].monad[Int, Int, String])
+  val monadLaws: Assertion =
+    verify("MonadLaws", MonadTests[Option].monad[Int, Int, String])
 
-  override val suite: IO[Test[Pure]] = test("OptionTest")(monadLaws).compile
+  override val suite: IO[Assertion] = test("OptionTest")(monadLaws).compile
 }

@@ -1,7 +1,6 @@
-package io.taig.testf.scalacheck
+package io.taig.testf
 
 import cats.implicits._
-import io.taig.testf._
 import org.scalacheck.Prop
 import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
@@ -18,7 +17,7 @@ trait ScalacheckAssertions extends ScalacheckAssertionN {
 }
 
 object ScalacheckAssertions extends ScalacheckAssertions {
-  private[scalacheck] def checkTest(
+  private[testf] def checkTest(
       prop: (Assertion => Prop) => Prop,
       parameters: Parameters = Parameters.default
   ): Assertion = {

@@ -1,9 +1,8 @@
-package io.taig.testf.hedgehog
+package io.taig.testf
 
 import hedgehog._
 import hedgehog.core._
 import hedgehog.runner.{Test => HedgehogTest}
-import io.taig.testf._
 
 trait HedgehogAssertions {
   private val seed = Seed.fromTime()
