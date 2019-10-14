@@ -1,5 +1,7 @@
 package io.taig.testf
 
+import cats.{Eq, Id}
+
 sealed abstract class Status extends Product with Serializable
 
 object Status {
@@ -7,6 +9,8 @@ object Status {
   final case object Failure extends Status
   final case object Skip extends Status
   final case object Success extends Status
+
+  implicit val eq: Eq[Status] = Eq.fromUniversalEquals
 
   private val and: (Status, Status) => Status = {
     case (x, Skip)    => x
@@ -36,16 +40,16 @@ object Status {
     case status  => status
   }
 
-  def of(test: Test[Pure]): Status = test match {
-    case Test.And(tests)       => tests.map(of).foldLeft[Status](Success)(and)
-    case test: Test.Eval[Pure] => of(test.test)
-    case Test.Error(_)         => Status.Error
-    case Test.Failure(_)       => Status.Failure
-    case Test.Label(_, test)   => of(test)
-    case Test.Message(_, test) => of(test)
-    case Test.Not(test)        => not(of(test))
-    case Test.Or(tests)        => tests.map(of).foldLeft[Status](Success)(or)
-    case Test.Skip(_)          => Status.Skip
-    case Test.Success          => Status.Success
+  def of(test: Test[Id, _]): Status = test match {
+    case Test.And(tests)        => tests.map(of).foldLeft[Status](Success)(and)
+    case test: Test.Eval[Id, _] => of(test.test)
+    case Test.Error(_)          => Status.Error
+    case Test.Failure(_)        => Status.Failure
+    case Test.Label(_, test)    => of(test)
+    case Test.Message(_, test)  => of(test)
+    case Test.Not(test)         => not(of(test))
+    case Test.Or(tests)         => tests.map(of).foldLeft[Status](Success)(or)
+    case Test.Skip(_)           => Status.Skip
+    case Test.Success(_)        => Status.Success
   }
 }

@@ -1,54 +1,58 @@
 package io.taig.testf.internal
 
+import cats.Id
 import cats.implicits._
 import io.taig.testf._
 import io.taig.testf.Status
 
 object Formatter {
-  def test(value: Test[Pure], color: Boolean = false): String =
+  def test[A](value: Test[Id, A], color: Boolean = false): String =
     Formatter.test(color, level = 0)(value).orEmpty
 
-  def test(
+  def test[A](
       color: Boolean,
       level: Int
-  ): Test[Pure] => Option[String] = {
-    case Test.And(tests)       => both(color, level)(tests)
-    case test: Test.Eval[Pure] => Formatter.test(color, level)(test.test)
+  ): Test[Id, A] => Option[String] = {
+    case Test.And(tests)        => both(color, level)(tests)
+    case test: Test.Eval[Id, A] => Formatter.test(color, level)(test.test)
     case Test.Error(message) =>
       error("unlabeled", message.some, color).some
     case Test.Failure(throwable) =>
       failure("unlabeled", throwable.some, color).some
-    case Test.Label(description, test: Test.And[Pure]) =>
+    case Test.Label(description, test: Test.And[Id, A]) =>
       group(color, level)(description, test)
-    case Test.Label(description, test: Test.Or[Pure]) =>
+    case Test.Label(description, test: Test.Or[Id, A]) =>
       group(color, level)(description, test)
     case Test.Label(description, Test.Error(message)) =>
       error(description, message.some, color).some
     case Test.Label(description, Test.Failure(throwable)) =>
       failure(description, throwable.some, color).some
     case Test.Label(description, Test.Skip(_)) => skip(description, color).some
-    case Test.Label(description, Test.Success) =>
+    case Test.Label(description, Test.Success(_)) =>
       success(description, color).some
     case Test.Label(description, test)   => label(color, level)(description, test)
     case Test.Message(description, test) => "message".some
     case Test.Not(test)                  => "NOT".some
     case Test.Or(tests)                  => both(color, level)(tests)
-    case Test.Skip(test)                 => skip(test.label.getOrElse(unlabeled), color).some
-    case Test.Success                    => Options.when(level === 0)(success("unlabeled", color))
+    case Test.Skip(test) =>
+      skip(test.label.getOrElse(unlabeled), color).some
+    case Test.Success(_) =>
+      Options.when(level === 0)(success("unlabeled", color))
   }
 
-  def group(
+  def group[A](
       color: Boolean,
       level: Int
-  )(description: String, test: Test[Pure]): Option[String] = {
-    val children = Formatter.children(test)
+  )(description: String, test: Test[Id, A]): Option[String] = {
+    val children: List[Test[Id, A]] = test.children
+    val total = children.length
     val labels = children.mapFilter(_.label)
-    val successes = children.filter(_.success)
+    val successes = children.filter(Status.of(_) === Status.Success)
 
     val descriptionWithCount =
-      if (labels.length === children.length) description
-      else if (successes === children) s"$description (${children.length})"
-      else s"$description (${successes.length}/${children.length})"
+      if (labels.length === total) description
+      else if (successes.length === total) s"$description ($total)"
+      else s"$description (${successes.length}/$total)"
 
     val errors = children
       .filter(_.label.isEmpty)
@@ -80,10 +84,10 @@ object Formatter {
       case Status.Success => success(description, color)
     }
 
-  def label(
+  def label[A](
       color: Boolean,
       level: Int
-  )(description: String, test: Test[Pure]): Option[String] = {
+  )(description: String, test: Test[Id, A]): Option[String] = {
     val title = Formatter.title(description, Status.of(test), color)
 
     val details = Formatter
@@ -94,36 +98,23 @@ object Formatter {
     title.some |+| details
   }
 
-  val count: Test[Pure] => Int = {
-    case Test.And(tests)       => tests.length
-    case test: Test.Eval[Pure] => count(test.test)
-    case Test.Error(_)         => 1
-    case Test.Failure(_)       => 1
-    case Test.Label(_, test)   => count(test)
-    case Test.Message(_, test) => count(test)
-    case Test.Not(test)        => count(test)
-    case Test.Or(tests)        => tests.length
-    case Test.Skip(_)          => 0
-    case Test.Success          => 1
-  }
-
-  val children: Test[Pure] => List[Test[Pure]] = {
-    case Test.And(tests)          => tests
-    case test: Test.Eval[Pure]    => List(test)
-    case test: Test.Error         => List(test)
-    case test: Test.Failure       => List(test)
-    case test: Test.Label[Pure]   => List(test)
-    case test: Test.Message[Pure] => List(test)
-    case test: Test.Not[Pure]     => List(test)
-    case Test.Or(tests)           => tests
-    case Test.Skip(_)             => List.empty
-    case Test.Success             => List(Test.Success)
+  def count[A]: Test[Id, A] => Int = {
+    case Test.And(tests)        => tests.length
+    case test: Test.Eval[Id, A] => count(test.test)
+    case Test.Error(_)          => 1
+    case Test.Failure(_)        => 1
+    case Test.Label(_, test)    => count(test)
+    case Test.Message(_, test)  => count(test)
+    case Test.Not(test)         => count(test)
+    case Test.Or(tests)         => tests.length
+    case Test.Skip(_)           => 0
+    case Test.Success(_)        => 1
   }
 
   val unlabeled: String = "unlabeled"
 
-  def both(color: Boolean, level: Int)(
-      tests: List[Test[Pure]]
+  def both[A](color: Boolean, level: Int)(
+      tests: List[Test[Id, A]]
   ): Option[String] =
     tests.mapFilter(Formatter.test(color, level)) match {
       case Nil   => None

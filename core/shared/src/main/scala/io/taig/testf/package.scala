@@ -1,5 +1,9 @@
 package io.taig
 
 package object testf {
-  type Pure[+A] <: Nothing
+  type Assertion = Test[Pure, Unit]
+
+  object Assertion extends Assertions
+
+  type Pure[A] <: Nothing
 }

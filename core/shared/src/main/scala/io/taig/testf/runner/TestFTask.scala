@@ -1,5 +1,6 @@
 package io.taig.testf.runner
 
+import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
@@ -61,13 +62,13 @@ object TestFTask {
       _ <- lock.take
       _ <- log[F](loggers, test)
       _ <- lock.put(true)
-      events = test.children.map(TestFEvent(task, _))
+      events = test.covary[Id].children.map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
 
   def log[F[_]: Sync](
       loggers: List[Logger],
-      test: Test[Pure]
+      test: Test[Id, Unit]
   ): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()

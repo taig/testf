@@ -19,18 +19,15 @@ object WebsiteStatusTest extends TestF {
       open.bracket(load)(disconnect)
     }
 
-  val typelevel: Test[IO] = eval("typelevel") {
-    request("https://typelevel.org/").map(equal(200))
-  }
+  def is200(url: String): Test[IO, Unit] =
+    eval(url)(request(url)).flatMap(equal(200))
 
-  val scalaLang: Test[IO] = eval("scala") {
-    request("https://www.scala-lang.org/").map(equal(200))
-  }
+  val urls: List[String] = List(
+    "https://typelevel.org/",
+    "https://www.scala-lang.org/",
+    "https://github.com/"
+  )
 
-  val github: Test[IO] = eval("github") {
-    request("https://github.com/").map(equal(200))
-  }
-
-  override val suite: IO[Test[Pure]] =
-    test("WebsiteStatusTest")(typelevel, scalaLang, github).compile
+  override val suite: IO[Test[Pure, Unit]] =
+    test("WebsiteStatusTest")(and(urls.map(is200))).compile
 }
