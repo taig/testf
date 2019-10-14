@@ -7,14 +7,14 @@ import io.taig.testf.dsl._
 import org.scalacheck.Gen
 
 object StringTest extends TestF {
-  val start: Assertion =
+  val start: Assertion[Pure] =
     test("startsWith") {
       check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
         startsWith(a)(a + b)
       }
     }
 
-  val concatenate: Assertion =
+  val concatenate: Assertion[Pure] =
     test("concatenate") {
       check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
         test("lengthA")(gte(a.length)((a + b).length)) &
@@ -22,7 +22,7 @@ object StringTest extends TestF {
       }
     }
 
-  val substring: Assertion =
+  val substring: Assertion[Pure] =
     test("substring") {
       check3(
         Gen.alphaNumStr,
@@ -33,6 +33,6 @@ object StringTest extends TestF {
       }
     }
 
-  override val suite: IO[Assertion] =
+  override val suite: IO[Assertion[Pure]] =
     test("StringTest")(start, concatenate, substring).compile
 }

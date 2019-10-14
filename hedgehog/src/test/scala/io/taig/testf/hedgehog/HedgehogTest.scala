@@ -6,7 +6,7 @@ import io.taig.testf._
 import io.taig.testf.dsl._
 
 object HedgehogTest extends TestF {
-  def reverse: Assertion =
+  def reverse: Assertion[Pure] =
     test("reverse") {
       check(
         Gen.alpha
@@ -16,6 +16,6 @@ object HedgehogTest extends TestF {
       )
     }
 
-  override val suite: IO[Assertion] =
+  override val suite: IO[Assertion[Pure]] =
     test("HedgehogTest")(reverse).compile
 }

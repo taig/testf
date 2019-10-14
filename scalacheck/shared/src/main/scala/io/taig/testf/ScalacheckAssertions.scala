@@ -9,7 +9,7 @@ trait ScalacheckAssertions extends ScalacheckAssertionN {
   def check(
       prop: Prop,
       parameters: Parameters = Parameters.default
-  ): Assertion = {
+  ): Assertion[Pure] = {
     val result = org.scalacheck.Test.check(parameters, prop)
     if (result.passed) Test.unit
     else Test.error(Pretty.pretty(result, Pretty.Params(2)))
@@ -18,12 +18,12 @@ trait ScalacheckAssertions extends ScalacheckAssertionN {
 
 object ScalacheckAssertions extends ScalacheckAssertions {
   private[testf] def checkTest(
-      prop: (Assertion => Prop) => Prop,
+      prop: (Assertion[Pure] => Prop) => Prop,
       parameters: Parameters = Parameters.default
-  ): Assertion = {
-    var test: Assertion = null
+  ): Assertion[Pure] = {
+    var test: Assertion[Pure] = null
 
-    val p: Assertion => Prop = { x =>
+    val p: Assertion[Pure] => Prop = { x =>
       test = x
       Prop(Status.of(test) === Status.Success)
     }

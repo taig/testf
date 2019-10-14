@@ -33,10 +33,10 @@ object ScalacheckGenerator {
   def check(length: Int): String = {
     s"""  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters)(f: (${types(
          length
-       )}) => Assertion)(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Assertion =
+       |  ): Assertion[Pure] =
        |    ScalacheckAssertions.checkTest(
        |      implicit prop => Prop.forAll(${argumentsGen(length)})(f),
        |      parameters
@@ -44,26 +44,26 @@ object ScalacheckGenerator {
        |
        |  def check$length[${types(length)}](${parameters(length)})(f: (${types(
          length
-       )}) => Assertion)(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Assertion = check$length(${argumentsGen(length)}, Parameters.default)(f)
+       |  ): Assertion[Pure] = check$length(${argumentsGen(length)}, Parameters.default)(f)
        |
        |  def check$length[${arbitraryTypes(length)}](parameters: Parameters)(f: (${types(
          length
-       )}) => Assertion)(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Assertion =
+       |  ): Assertion[Pure] =
        |    ScalacheckAssertions.checkTest(
        |      implicit prop => Prop.forAll(f),
        |      parameters
        |    )
        |
-       |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Assertion)(
+       |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Assertion =
+       |  ): Assertion[Pure] =
        |    check$length(Parameters.default)(f)
      """.stripMargin
   }

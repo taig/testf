@@ -12,18 +12,19 @@ object FormatterTest extends TestF {
     val stacktrace: String =
       Text.padLeft(Text.print(Fixture.exception), columns = 2)
 
-    val error: Assertion = Test.error("foo")
+    val error: Assertion[Pure] = Test.error("foo")
 
-    val failure: Assertion = Test.failure(exception)
+    val failure: Assertion[Pure] = Test.failure(exception)
 
-    def label(test: Assertion): Assertion = Test.label("foobar", test)
+    def label(test: Assertion[Pure]): Assertion[Pure] =
+      Test.label("foobar", test)
 
-    val skip: Assertion = Test.skip(error)
+    val skip: Assertion[Pure] = Test.skip(error)
 
-    val success: Assertion = Test.unit
+    val success: Assertion[Pure] = Test.unit
   }
 
-  val basic: Assertion = test("basic")(
+  val basic: Assertion[Pure] = test("basic")(
     test("error")(
       test("root") {
         equal("✗ unlabeled" + "\n  " + "foo")(Formatter.test(Fixture.error))
@@ -65,14 +66,14 @@ object FormatterTest extends TestF {
     test("skip dummy")(Fixture.skip)
   )
 
-  val skip: Assertion = test("skip")(
+  val skip: Assertion[Pure] = test("skip")(
     test("falls back to inner label") {
       val test = Test.skip(Fixture.label(Test.empty))
       equal("@ foobar")(Formatter.test(test))
     }
   )
 
-  val unlabeled: Assertion = test("unlabeled")(
+  val unlabeled: Assertion[Pure] = test("unlabeled")(
     test("shows amount of unlabeled tests") {
       val test = Fixture.label(Test.allOf(Fixture.success, Fixture.success))
       equal("✓ foobar (2)")(Formatter.test(test))
@@ -83,6 +84,6 @@ object FormatterTest extends TestF {
     }
   )
 
-  override def suite: IO[Assertion] =
+  override def suite: IO[Assertion[Pure]] =
     test("FormatterTest")(basic, skip, unlabeled).compile
 }

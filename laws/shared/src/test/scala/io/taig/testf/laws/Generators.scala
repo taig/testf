@@ -9,7 +9,7 @@ object Generators {
     Gen.listOfN(length, Gen.alphaChar).map(_.mkString)
   }
 
-  val test: Gen[Assertion] = {
+  val test: Gen[Assertion[Pure]] = {
     val error = description.map(Test.error)
 
     val failure = Arbitrary.arbitrary[Throwable].map(Test.failure)

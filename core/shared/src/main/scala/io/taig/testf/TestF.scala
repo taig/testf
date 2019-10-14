@@ -5,5 +5,5 @@ import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
 
 @EnableReflectiveInstantiation
 abstract class TestF {
-  def suite: IO[Test[Pure, Unit]]
+  def suite: IO[Assertion[Pure]]
 }

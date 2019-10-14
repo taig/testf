@@ -62,7 +62,7 @@ private final class AutoTestFMacro(val c: blackbox.Context) {
 
   def filter(
       c: blackbox.Context
-  )(body: List[c.Tree], label: Boolean): c.Expr[IO[Assertion]] = {
+  )(body: List[c.Tree], label: Boolean): c.Expr[IO[Assertion[Pure]]] = {
     import c.universe._
 
     val test = typeOf[Test[IO, Unit]].typeSymbol

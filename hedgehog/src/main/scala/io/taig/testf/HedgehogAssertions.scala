@@ -10,14 +10,19 @@ trait HedgehogAssertions {
   def check(
       property: Property,
       config: PropertyConfig = PropertyConfig.default
-  ): Assertion = {
+  ): Assertion[Pure] = {
     val report = Property.check(config, property, seed)
     val test = HedgehogTest("", property)
 
     report.status match {
       case OK => Test.unit
       case Failed(_, _) | GaveUp =>
-        val message = HedgehogTest.renderReport("", test, report, false)
+        val message = HedgehogTest.renderReport(
+          className = "",
+          test,
+          report,
+          ansiCodesSupported = false
+        )
         Test.error(message.substring(5))
     }
   }

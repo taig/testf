@@ -9,13 +9,15 @@ import io.taig.testf.laws.Cogens.cogenTest
 import org.scalacheck.Arbitrary
 
 object TestTest extends TestF {
-  implicit val arbitrary: Arbitrary[Assertion] = Arbitrary(Generators.test)
+  implicit val arbitrary: Arbitrary[Assertion[Pure]] = Arbitrary(
+    Generators.test
+  )
 
-  val eqLaws: Assertion = verify("EqLaws", EqTests[Assertion].eqv)
+  val eqLaws: Assertion[Pure] = verify("EqLaws", EqTests[Assertion[Pure]].eqv)
 
-  val semigroupLaws: Assertion =
-    verify("SemigroupLaws", SemigroupTests[Assertion].semigroup)
+  val semigroupLaws: Assertion[Pure] =
+    verify("SemigroupLaws", SemigroupTests[Assertion[Pure]].semigroup)
 
-  override val suite: IO[Assertion] =
+  override val suite: IO[Assertion[Pure]] =
     test("TestTest")(eqLaws, semigroupLaws).compile
 }

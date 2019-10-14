@@ -19,7 +19,7 @@ object WebsiteStatusTest extends TestF {
       open.bracket(load)(disconnect)
     }
 
-  def is200(url: String): Test[IO, Unit] =
+  def is200(url: String): Assertion[IO] =
     eval(url)(request(url)).flatMap(equal(200))
 
   val urls: List[String] = List(
@@ -28,6 +28,6 @@ object WebsiteStatusTest extends TestF {
     "https://github.com/"
   )
 
-  override val suite: IO[Assertion] =
+  override val suite: IO[Assertion[Pure]] =
     test("WebsiteStatusTest")(and(urls.map(is200))).compile
 }
