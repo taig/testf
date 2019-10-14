@@ -6,7 +6,7 @@ import io.taig.testf._
 import io.taig.testf.dsl._
 import org.scalacheck.Gen
 
-object StringTest extends TestF {
+object StringTest extends TestApp {
   val start: Assertion[Pure] =
     test("startsWith") {
       check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>

@@ -6,7 +6,7 @@ import cats.implicits._
 import cats.effect.IO
 import io.taig.testf.dsl._
 
-object WebsiteStatusTest extends TestF {
+object WebsiteStatusTest extends TestApp {
   def request(url: String): IO[Int] =
     IO.delay(new URL(url)).flatMap { url =>
       val open = IO.delay(url.openConnection().asInstanceOf[HttpURLConnection])

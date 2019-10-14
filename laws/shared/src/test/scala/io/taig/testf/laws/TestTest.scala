@@ -8,7 +8,7 @@ import io.taig.testf.dsl._
 import io.taig.testf.laws.Cogens.cogenTest
 import org.scalacheck.Arbitrary
 
-object TestTest extends TestF {
+object TestTest extends TestApp {
   implicit val arbitrary: Arbitrary[Assertion[Pure]] = Arbitrary(
     Generators.test
   )

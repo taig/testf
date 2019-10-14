@@ -4,6 +4,6 @@ import cats.effect.IO
 import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
 
 @EnableReflectiveInstantiation
-abstract class TestF {
+abstract class TestApp {
   def suite: IO[Assertion[Pure]]
 }

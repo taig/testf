@@ -5,7 +5,7 @@ import hedgehog._
 import io.taig.testf._
 import io.taig.testf.dsl._
 
-object HedgehogTest extends TestF {
+object HedgehogTest extends TestApp {
   def reverse: Assertion[Pure] =
     test("reverse") {
       check(

@@ -5,7 +5,7 @@ import cats.implicits._
 import io.taig.testf.internal.{Formatter, Text}
 import io.taig.testf.dsl._
 
-object FormatterTest extends TestF {
+object FormatterTest extends TestApp {
   object Fixture {
     val exception: Exception = new Exception("exception")
 
