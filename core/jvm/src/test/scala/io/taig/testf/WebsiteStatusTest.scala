@@ -28,6 +28,6 @@ object WebsiteStatusTest extends TestF {
     "https://github.com/"
   )
 
-  override val suite: IO[Test[Pure, Unit]] =
+  override val suite: IO[Assertion] =
     test("WebsiteStatusTest")(and(urls.map(is200))).compile
 }

@@ -41,7 +41,7 @@ final class TestFTask(
 
   def recover(loggers: Array[Logger])(throwable: Throwable): Unit =
     loggers.foreach { logger =>
-      logger.error(s"Failed to run test suite ${task.fullyQualifiedName()}")
+      logger.error(s"Failed to run test suite ${task.fullyQualifiedName}")
       logger.trace(throwable)
     }
 }

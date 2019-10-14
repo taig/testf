@@ -5,7 +5,7 @@ import cats.implicits._
 
 trait Assertions {
   def assert(predicate: Boolean, message: => String): Assertion =
-    if (predicate) Test.unit else Test.error(message)
+    Assertion(predicate, message)
 
   def equal[A: Eq: Show](expected: A)(actual: A): Assertion =
     assert(
