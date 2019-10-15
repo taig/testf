@@ -17,7 +17,7 @@ private final class Macro(val c: blackbox.Context) {
       case _           => c.abort(c.enclosingPosition, "Only objects allowed")
     }
 
-    val appType = typeOf[TestApp]
+    val appType = typeOf[AutoTestApp]
     val anyRefType = typeOf[AnyRef]
 
     val result = tree match {
@@ -27,19 +27,40 @@ private final class Macro(val c: blackbox.Context) {
           parent <:< appType || parent <:< anyRefType
         }
 
-        val testAppParents = tq"io.taig.testf.TestApp" +: filteredParents
+        val autoTestAppParents = tq"_root_.io.taig.testf.AutoTestApp" +: filteredParents
+
+        val (autoTests, remainingBody) = findAutoTests(c)(body)
 
         q"""
-        $mods object $name extends ..$testAppParents { $self =>
-          ..$body
+        $mods object $name extends ..$autoTestAppParents { $self =>
+          ..$remainingBody
+
+          final override val auto: _root_.cats.effect.IO[_root_.io.taig.testf.Assertion[_root_.io.taig.testf.Pure]] = {
+            import _root_.cats.instances.list.catsStdInstancesForList
+            _root_.cats.Parallel.parSequence(
+              _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
+                ..$autoTests
+              )
+            ).map(_root_.io.taig.testf.Test.and)
+          }
         }
         """
       case _ => c.abort(c.enclosingPosition, "Only object allowed")
     }
 
-    println(show(result))
-
     c.Expr(result)
+  }
+
+  def findAutoTests(
+      c: blackbox.Context
+  )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = {
+    import c.universe._
+
+    val compiledTests = body.map { tree =>
+      q"$tree.interpret"
+    }
+
+    (compiledTests, Seq.empty)
   }
 
 //    val (entrypoint, label) = c.prefix.tree match {

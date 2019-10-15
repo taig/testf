@@ -10,7 +10,7 @@ trait HedgehogAssertions {
   def check(
       property: Property,
       config: PropertyConfig = PropertyConfig.default
-  ): Assertion[Pure] = {
+  ): Assertion[Id] = {
     val report = Property.check(config, property, seed)
     val test = HedgehogTest("", property)
 
