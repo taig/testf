@@ -43,7 +43,8 @@ abstract class SeqInterpreter[F[_]: Functor] extends DefaultInterpreter[F] {
 }
 
 @implicitNotFound(
-  "Could not find an instance of ParInterpreter for ${F}. Do you have a Parallel[IO] in scope?"
+  "Could not find an instance of ParInterpreter for ${F}. " +
+    "Do you have a Parallel[IO] in scope?"
 )
 abstract class ParInterpreter[F[_]: Functor](implicit P: Parallel[IO])
     extends DefaultInterpreter[F] {

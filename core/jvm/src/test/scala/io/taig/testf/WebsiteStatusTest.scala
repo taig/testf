@@ -29,5 +29,5 @@ object WebsiteStatusTest extends TestApp {
   )
 
   override val suite: IO[Assertion[Pure]] =
-    test("WebsiteStatusTest")(and(urls.map(is200))).interpret
+    testAll("WebsiteStatusTest")(urls.map(is200)).interpret
 }
