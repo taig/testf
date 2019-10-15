@@ -1,12 +1,14 @@
 package io.taig.testf
 
-import cats.effect.{ContextShift, IO}
-import cats.implicits._
-
-import scala.concurrent.ExecutionContext
+import cats.effect.IO
 
 abstract class AutoTestApp extends TestApp {
-  def discover: List[IO[Assertion[Pure]]]
+  def discover: IO[Assertion[Pure]] = {
+    val message = "No tests were discovered. " +
+      "Did you forget the @AutoTest annotation?"
 
-  override def suite: IO[Assertion[Pure]] = ???
+    IO.raiseError(new IllegalStateException(message))
+  }
+
+  override def suite: IO[Assertion[Pure]] = discover
 }

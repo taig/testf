@@ -20,6 +20,9 @@ trait Builders {
   def failure(throwable: Throwable): Test[Pure, Nothing] =
     Test.Failure(throwable)
 
+  def failure(description: String)(throwable: Throwable): Test[Pure, Nothing] =
+    label(description, failure(throwable))
+
   def force[F[_], A](value: F[Test[F, A]]): Test[F, A] = Test.Eval[F, A](value)
 
   def force[F[_], A](description: String)(value: F[Test[F, A]]): Test[F, A] =

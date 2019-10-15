@@ -11,6 +11,4 @@ import io.taig.testf.dsl._
 //  force("IO val")(IO.pure(unit))
 //}
 
-//object AutoTestTest extends AutoTestApp {
-//  override def suite: IO[Assertion[Pure]] = IO.pure(success("yolo")(3))
-//}
+object AutoTestTest extends AutoTestApp {}

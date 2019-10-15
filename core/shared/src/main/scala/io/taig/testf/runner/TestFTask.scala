@@ -58,7 +58,7 @@ object TestFTask {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
       testF <- F.delay(module.asInstanceOf[TestApp])
-      test <- Async.liftIO(testF.suite)
+      test <- Async.liftIO(testF.suite).handleError(Test.failure(name))
       _ <- lock.take
       _ <- log[F](loggers, test)
       _ <- lock.put(true)
