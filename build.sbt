@@ -24,7 +24,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         "org.typelevel" %%% "cats-effect" % "2.0.0" ::
         Nil,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .jvmSettings(
@@ -43,7 +43,7 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .jsSettings(
@@ -68,7 +68,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
       Seq(file)
     }.taskValue,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(core)
@@ -81,7 +81,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
       "org.typelevel" %%% "cats-laws" % "2.0.0" ::
         Nil,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(scalacheck)
@@ -98,7 +98,7 @@ lazy val hedgehog = project
       url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
     )(Resolver.ivyStylePatterns),
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(core.jvm)

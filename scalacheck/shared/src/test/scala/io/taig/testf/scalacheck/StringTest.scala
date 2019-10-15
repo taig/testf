@@ -34,5 +34,5 @@ object StringTest extends TestApp {
     }
 
   override val suite: IO[Assertion[Pure]] =
-    test("StringTest")(start, concatenate, substring).compile
+    test("StringTest")(start, concatenate, substring).interpret
 }

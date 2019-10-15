@@ -19,5 +19,5 @@ object TestTest extends TestApp {
     verify("SemigroupLaws", SemigroupTests[Assertion[Pure]].semigroup)
 
   override val suite: IO[Assertion[Pure]] =
-    test("TestTest")(eqLaws, semigroupLaws).compile
+    test("TestTest")(eqLaws, semigroupLaws).interpret
 }

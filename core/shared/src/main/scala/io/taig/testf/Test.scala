@@ -32,8 +32,16 @@ object Test extends Builders {
   final case class Success[A](value: A) extends Test[Pure, A]
 
   final implicit class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
-    def compile(implicit compiler: Compiler[F]): IO[Test[Pure, A]] =
-      compiler.compile(test)
+    def interpret(implicit interpreter: Interpreter[F]): IO[Test[Pure, A]] =
+      interpreter.interpret(test)
+
+    def parInterpret(
+        implicit interpreter: ParInterpreter[F]
+    ): IO[Test[Pure, A]] = interpreter.interpret(test)
+
+    def seqInterpret(
+        implicit interpreter: SeqInterpreter[F]
+    ): IO[Test[Pure, A]] = interpreter.interpret(test)
 
     def mapK[G[α] >: F[α]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] =
       test match {

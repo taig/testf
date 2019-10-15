@@ -6,11 +6,11 @@ import sbt.testing._
 
 import scala.concurrent.ExecutionContext
 
-final class TestFFramework extends Framework {
+final class TestF extends Framework {
   override val name: String = "TestF"
 
   override val fingerprints: Array[Fingerprint] =
-    Array(TestFFramework.ModuleFingerprint)
+    Array(TestF.ModuleFingerprint)
 
   override def runner(
       args: Array[String],
@@ -21,8 +21,8 @@ final class TestFFramework extends Framework {
       args,
       remoteArgs,
       testClassLoader,
-      TestFFramework.lock,
-      TestFFramework.contextShift
+      TestF.lock,
+      TestF.contextShift
     )
 
   def slaveRunner(
@@ -34,19 +34,20 @@ final class TestFFramework extends Framework {
     runner(args, remoteArgs, testClassLoader)
 }
 
-object TestFFramework {
+object TestF {
   val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  val concurrent: ConcurrentEffect[IO] = IO.ioConcurrentEffect(contextShift)
+  val concurrentEffect: ConcurrentEffect[IO] =
+    IO.ioConcurrentEffect(contextShift)
 
   val lock: MVar[IO, Boolean] =
-    MVar.of[IO, Boolean](true)(concurrent).unsafeRunSync()
+    MVar.of[IO, Boolean](true)(concurrentEffect).unsafeRunSync()
 
   object ModuleFingerprint extends SubclassFingerprint {
     override val isModule = true
 
-    override val requireNoArgConstructor: Boolean = true
+    override val requireNoArgConstructor = true
 
-    override val superclassName: String = "io.taig.testf.TestF"
+    override val superclassName = "io.taig.testf.TestApp"
   }
 }

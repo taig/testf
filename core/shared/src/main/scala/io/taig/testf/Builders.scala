@@ -53,7 +53,7 @@ trait Builders {
   def fromOptionT[F[_]: Functor, A](option: OptionT[F, A]): Test[F, A] =
     eval(option.value).flatMap(fromOption)
 
-  def pure[A](value: A): Test[Pure, A] = success(value)
+  def pure[A](value: A): Test[Pure, A] = Test.Success(value)
 
   def label[F[_], A](description: String, test: Test[F, A]): Test[F, A] =
     Test.Label(description, test)
@@ -67,9 +67,7 @@ trait Builders {
 
   def skip[F[_], A](test: Test[F, A]): Test[F, A] = Test.Skip(test)
 
-  def success[A](value: A): Test[Pure, A] = Test.Success(value)
-
-  val unit: Test[Pure, Unit] = success(())
+  val unit: Test[Pure, Unit] = pure(())
 
   def allOf[F[_], A](tests: Test[F, A]*): Test[F, A] =
     if (tests.isEmpty) empty
@@ -83,17 +81,6 @@ trait Builders {
     else label(description, allOf(test +: tests: _*))
 
   /**
-    * Apply a label to `test` if it doesn't have one yet
-    */
-  def fallback[F[_]: Monad, A](
-      description: String
-  )(test: Test[F, A]): Test[F, A] =
-    test match {
-      case test: Test.Label[F, A] => test
-      case test                   => label(description, test)
-    }
-
-  /**
     * Create a `Test` that succeeds when at least one of the given `tests`
     * succeeds
     */
@@ -103,5 +90,5 @@ trait Builders {
     else tests.reduceLeft(_ or _)
 
   def success[A](description: String)(value: A): Test[Pure, A] =
-    label(description, success(value))
+    label(description, pure(value))
 }
