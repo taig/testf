@@ -2,7 +2,6 @@ object ScalacheckGenerator {
   def apply(pkg: String, name: String): String = {
     s"""package $pkg
        |
-       |import io.taig.testf._
        |import org.scalacheck.Test.Parameters
        |import org.scalacheck.util.Pretty
        |import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}

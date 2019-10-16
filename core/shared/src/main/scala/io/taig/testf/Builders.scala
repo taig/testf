@@ -85,11 +85,7 @@ trait Builders {
   def testAll[F[_], A](
       description: String
   )(tests: List[Test[F, A]]): Test[F, A] =
-    tests match {
-      case Nil         => empty
-      case test :: Nil => label(description, test)
-      case tests       => label(description, allOf(tests: _*))
-    }
+    label(description, allOf(tests: _*))
 
   /**
     * Create a `Test` that succeeds when at least one of the given `tests`
