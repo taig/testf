@@ -1,7 +1,5 @@
 package io.taig.testf
 
-import cats.effect.IO
-
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.{blackbox, TypecheckException}

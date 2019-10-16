@@ -11,7 +11,7 @@ abstract class AutoTestApp extends TestApp {
   }
 
   override def suite: IO[Assertion[Pure]] = {
-    val name = getClass.getCanonicalName.replace("$", "")
+    val name = getClass.getName.replace("$", "")
     auto.map(Test.label(name, _))
   }
 }
