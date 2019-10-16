@@ -10,5 +10,8 @@ abstract class AutoTestApp extends TestApp {
     IO.raiseError(new IllegalStateException(message))
   }
 
-  override def suite: IO[Assertion[Pure]] = auto
+  override def suite: IO[Assertion[Pure]] = {
+    val name = getClass.getCanonicalName.replace("$", "")
+    auto.map(Test.label(name, _))
+  }
 }

@@ -5,10 +5,14 @@ import io.taig.testf.dsl._
 
 @AutoTest
 object AutoTestPlainTest {
-  test("foo")(unit)
+  test("foo")(pure(42))
 
   force("bar")(IO.pure(unit))
 }
 
 @AutoTest
-object AutoTestInheritedTest {}
+object AutoTestInheritedTest extends AutoTestApp {
+  test("foo")(pure(42))
+
+  force("bar")(IO.pure(unit))
+}
