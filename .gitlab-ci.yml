@@ -19,16 +19,23 @@ docker:
     - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA .
     - docker push $CONTAINER_IMAGE
 
-test:
+test-jvm:
   stage: test
   image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
   script:
-    - sbt -Dmode=strict scalafmtCheckAll coverage test coverageReport coverageAggregate publishLocal
+    - sbt -Dmode=strict scalafmtCheckAll coverage +testJVM coverageReport coverageAggregate
     - mv target/scala-2.13/scoverage-report/ coverage/
+    - sbt -Dmode=strict publishLocal
   artifacts:
     expire_in: 1 month
     paths:
       - coverage/
+
+test-js:
+  stage: test
+  image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
+  script:
+    - sbt -Dmode=strict +testJS
 
 
 publish:

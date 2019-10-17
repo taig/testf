@@ -102,3 +102,12 @@ lazy val hedgehog = project
     )
   )
   .dependsOn(core.jvm)
+
+addCommandAlias(
+  "testJVM",
+  ";core/test;auto/test;scalacheck/test;laws/test;hedgehog/test"
+)
+addCommandAlias(
+  "testJS",
+  ";coreJS/test;autoJS/test;scalacheckJS/test;lawsJS/test;hedgehogJS/test"
+)
