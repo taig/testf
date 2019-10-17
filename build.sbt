@@ -109,5 +109,5 @@ addCommandAlias(
 )
 addCommandAlias(
   "testJS",
-  ";coreJS/test;autoJS/test;scalacheckJS/test;lawsJS/test;hedgehogJS/test"
+  ";coreJS/test;autoJS/test;scalacheckJS/test;lawsJS/test"
 )
