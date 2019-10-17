@@ -1,32 +1,31 @@
-package io.taig.testf.scalacheck
+package io.taig.testf
 
-import io.taig.testf._
-import io.taig.testf.Test
+import cats.implicits._
 import org.scalacheck.Prop
 import org.scalacheck.Test.Parameters
 import org.scalacheck.util.Pretty
 
-trait ScalacheckAssertion extends ScalacheckAssertionN {
+trait ScalacheckAssertions extends ScalacheckAssertionN {
   def check(
       prop: Prop,
       parameters: Parameters = Parameters.default
-  ): Test[Pure] = {
+  ): Assertion[Pure] = {
     val result = org.scalacheck.Test.check(parameters, prop)
-    if (result.passed) Test.success
+    if (result.passed) Test.unit
     else Test.error(Pretty.pretty(result, Pretty.Params(2)))
   }
 }
 
-object ScalacheckAssertion extends ScalacheckAssertion {
-  private[scalacheck] def checkTest(
-      prop: (Test[Pure] => Prop) => Prop,
+object ScalacheckAssertions extends ScalacheckAssertions {
+  private[testf] def checkTest(
+      prop: (Assertion[Pure] => Prop) => Prop,
       parameters: Parameters = Parameters.default
-  ): Test[Pure] = {
-    var test: Test[Pure] = null
+  ): Assertion[Pure] = {
+    var test: Assertion[Pure] = null
 
-    val p: Test[Pure] => Prop = { x =>
+    val p: Assertion[Pure] => Prop = { x =>
       test = x
-      Prop(test.success)
+      Prop(Status.of(test) === Status.Success)
     }
 
     val result = org.scalacheck.Test.check(parameters, prop(p))

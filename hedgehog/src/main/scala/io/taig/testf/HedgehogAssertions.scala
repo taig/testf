@@ -1,27 +1,31 @@
-package io.taig.testf.hedgehog
+package io.taig.testf
 
 import hedgehog._
 import hedgehog.core._
 import hedgehog.runner.{Test => HedgehogTest}
-import io.taig.testf._
 
-trait HedgehogAssertion {
+trait HedgehogAssertions {
   private val seed = Seed.fromTime()
 
   def check(
       property: Property,
       config: PropertyConfig = PropertyConfig.default
-  ): Test[Pure] = {
+  ): Assertion[Pure] = {
     val report = Property.check(config, property, seed)
     val test = HedgehogTest("", property)
 
     report.status match {
-      case OK => Test.success
+      case OK => Test.unit
       case Failed(_, _) | GaveUp =>
-        val message = HedgehogTest.renderReport("", test, report, false)
+        val message = HedgehogTest.renderReport(
+          className = "",
+          test,
+          report,
+          ansiCodesSupported = false
+        )
         Test.error(message.substring(5))
     }
   }
 }
 
-object HedgehogAssertion extends HedgehogAssertion
+object HedgehogAssertions extends HedgehogAssertions

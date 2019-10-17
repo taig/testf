@@ -6,7 +6,7 @@ import cats.implicits._
 import cats.effect.IO
 import io.taig.testf.dsl._
 
-object WebsiteStatusTest extends TestF {
+object WebsiteStatusTest extends TestApp {
   def request(url: String): IO[Int] =
     IO.delay(new URL(url)).flatMap { url =>
       val open = IO.delay(url.openConnection().asInstanceOf[HttpURLConnection])
@@ -19,18 +19,15 @@ object WebsiteStatusTest extends TestF {
       open.bracket(load)(disconnect)
     }
 
-  val typelevel: Test[IO] = eval("typelevel") {
-    request("https://typelevel.org/").map(equal(200))
-  }
+  def is200(url: String): Assertion[IO] =
+    eval(url)(request(url)).flatMap(equal(200))
 
-  val scalaLang: Test[IO] = eval("scala") {
-    request("https://www.scala-lang.org/").map(equal(200))
-  }
+  val urls: List[String] = List(
+    "https://typelevel.org/",
+    "https://www.scala-lang.org/",
+    "https://github.com/"
+  )
 
-  val github: Test[IO] = eval("github") {
-    request("https://github.com/").map(equal(200))
-  }
-
-  override val suite: IO[Test[Pure]] =
-    test("WebsiteStatusTest")(typelevel, scalaLang, github).compile
+  override val suite: IO[Assertion[Pure]] =
+    testAll("WebsiteStatusTest")(urls.map(is200)).interpret
 }

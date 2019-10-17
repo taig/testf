@@ -2,7 +2,6 @@ object ScalacheckGenerator {
   def apply(pkg: String, name: String): String = {
     s"""package $pkg
        |
-       |import io.taig.testf._
        |import org.scalacheck.Test.Parameters
        |import org.scalacheck.util.Pretty
        |import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}
@@ -33,37 +32,37 @@ object ScalacheckGenerator {
   def check(length: Int): String = {
     s"""  def check$length[${types(length)}](${parameters(length)}, parameters: Parameters)(f: (${types(
          length
-       )}) => Test[Pure])(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test[Pure] =
-       |    ScalacheckAssertion.checkTest(
+       |  ): Assertion[Pure] =
+       |    ScalacheckAssertions.checkTest(
        |      implicit prop => Prop.forAll(${argumentsGen(length)})(f),
        |      parameters
        |    )
        |
        |  def check$length[${types(length)}](${parameters(length)})(f: (${types(
          length
-       )}) => Test[Pure])(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test[Pure] = check$length(${argumentsGen(length)}, Parameters.default)(f)
+       |  ): Assertion[Pure] = check$length(${argumentsGen(length)}, Parameters.default)(f)
        |
        |  def check$length[${arbitraryTypes(length)}](parameters: Parameters)(f: (${types(
          length
-       )}) => Test[Pure])(
+       )}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test[Pure] =
-       |    ScalacheckAssertion.checkTest(
+       |  ): Assertion[Pure] =
+       |    ScalacheckAssertions.checkTest(
        |      implicit prop => Prop.forAll(f),
        |      parameters
        |    )
        |
-       |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Test[Pure])(
+       |    def check$length[${arbitraryTypes(length)}](f: (${types(length)}) => Assertion[Pure])(
        |    implicit
        |    ${implicits(length)}
-       |  ): Test[Pure] =
+       |  ): Assertion[Pure] =
        |    check$length(Parameters.default)(f)
      """.stripMargin
   }

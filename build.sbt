@@ -24,7 +24,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         "org.typelevel" %%% "cats-effect" % "2.0.0" ::
         Nil,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .jvmSettings(
@@ -43,7 +43,7 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .jsSettings(
@@ -61,14 +61,14 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
       "org.scalacheck" %%% "scalacheck" % "1.14.2" ::
         Nil,
     sourceGenerators in Compile += Def.task {
-      val pkg = s"${organization.value}.testf.scalacheck"
+      val pkg = s"${organization.value}.testf"
       val name = "ScalacheckAssertionN"
       val file = (sourceManaged in Compile).value / s"$name.scala"
       IO.write(file, ScalacheckGenerator(pkg, name))
       Seq(file)
     }.taskValue,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(core)
@@ -81,7 +81,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
       "org.typelevel" %%% "cats-laws" % "2.0.0" ::
         Nil,
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(scalacheck)
@@ -98,7 +98,16 @@ lazy val hedgehog = project
       url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
     )(Resolver.ivyStylePatterns),
     testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestFFramework"
+      s"${organization.value}.testf.runner.TestF"
     )
   )
   .dependsOn(core.jvm)
+
+addCommandAlias(
+  "testJVM",
+  ";core/test;auto/test;scalacheck/test;laws/test;hedgehog/test"
+)
+addCommandAlias(
+  "testJS",
+  ";coreJS/test;autoJS/test;scalacheckJS/test;lawsJS/test"
+)

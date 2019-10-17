@@ -5,25 +5,26 @@ import cats.implicits._
 import io.taig.testf.internal.{Formatter, Text}
 import io.taig.testf.dsl._
 
-object FormatterTest extends TestF {
+object FormatterTest extends TestApp {
   object Fixture {
     val exception: Exception = new Exception("exception")
 
     val stacktrace: String =
       Text.padLeft(Text.print(Fixture.exception), columns = 2)
 
-    val error: Test[Pure] = Test.error("foo")
+    val error: Assertion[Pure] = Test.error("foo")
 
-    val failure: Test[Pure] = Test.failure(exception)
+    val failure: Assertion[Pure] = Test.failure(exception)
 
-    def label(test: Test[Pure]): Test[Pure] = Test.label("foobar", test)
+    def label(test: Assertion[Pure]): Assertion[Pure] =
+      Test.label("foobar", test)
 
-    val skip: Test[Pure] = Test.skip(error)
+    val skip: Assertion[Pure] = Test.skip(error)
 
-    val success: Test[Pure] = Test.success
+    val success: Assertion[Pure] = Test.unit
   }
 
-  val basic: Test[Pure] = test("basic")(
+  val basic: Assertion[Pure] = test("basic")(
     test("error")(
       test("root") {
         equal("✗ unlabeled" + "\n  " + "foo")(Formatter.test(Fixture.error))
@@ -65,14 +66,14 @@ object FormatterTest extends TestF {
     test("skip dummy")(Fixture.skip)
   )
 
-  val skip: Test[Pure] = test("skip")(
+  val skip: Assertion[Pure] = test("skip")(
     test("falls back to inner label") {
       val test = Test.skip(Fixture.label(Test.empty))
       equal("@ foobar")(Formatter.test(test))
     }
   )
 
-  val unlabeled: Test[Pure] = test("unlabeled")(
+  val unlabeled: Assertion[Pure] = test("unlabeled")(
     test("shows amount of unlabeled tests") {
       val test = Fixture.label(Test.allOf(Fixture.success, Fixture.success))
       equal("✓ foobar (2)")(Formatter.test(test))
@@ -83,6 +84,6 @@ object FormatterTest extends TestF {
     }
   )
 
-  override def suite: IO[Test[Pure]] =
-    test("FormatterTest")(basic, skip, unlabeled).compile
+  override def suite: IO[Assertion[Pure]] =
+    test("FormatterTest")(basic, skip, unlabeled).interpret
 }

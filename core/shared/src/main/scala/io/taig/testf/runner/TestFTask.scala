@@ -1,10 +1,11 @@
 package io.taig.testf.runner
 
+import cats.Id
 import cats.effect._
 import cats.effect.concurrent.MVar
 import cats.implicits._
 import io.taig.testf._
-import io.taig.testf.internal.{Formatter, Logging, Reflection}
+import io.taig.testf.internal.{Formatter, Logging, Reflection, Tests}
 import sbt.testing._
 
 final class TestFTask(
@@ -40,7 +41,7 @@ final class TestFTask(
 
   def recover(loggers: Array[Logger])(throwable: Throwable): Unit =
     loggers.foreach { logger =>
-      logger.error(s"Failed to run test suite ${task.fullyQualifiedName()}")
+      logger.error(s"Failed to run test suite ${task.fullyQualifiedName}")
       logger.trace(throwable)
     }
 }
@@ -56,18 +57,18 @@ object TestFTask {
     for {
       name <- F.delay(task.fullyQualifiedName())
       module <- Reflection.loadModule[F](classLoader, name)
-      testF <- F.delay(module.asInstanceOf[TestF])
-      test <- Async.liftIO(testF.suite)
+      testF <- F.delay(module.asInstanceOf[TestApp])
+      test <- Async.liftIO(testF.suite).handleError(Test.failure(name))
       _ <- lock.take
       _ <- log[F](loggers, test)
       _ <- lock.put(true)
-      events = test.children.map(TestFEvent(task, _))
+      events = Tests.children(test).map(TestFEvent(task, _))
       _ <- events.traverse_(event => F.delay(eventHandler.handle(event)))
     } yield ()
 
   def log[F[_]: Sync](
       loggers: List[Logger],
-      test: Test[Pure]
+      test: Test[Id, Unit]
   ): F[Unit] =
     loggers.traverse_ { logger =>
       val color = logger.ansiCodesSupported()
