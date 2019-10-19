@@ -75,9 +75,7 @@ object Test extends Builders {
 
     def |(test: Test[F, A]): Test[F, A] = or(test)
 
-    def assert(
-        f: A => Assertion[F]
-    )(implicit F: Monad[Test[F, *]]): Assertion[F] =
+    def assert(f: A => Assertion[F])(implicit F: Functor[F]): Assertion[F] =
       test.flatMap(f)
   }
 
@@ -130,32 +128,6 @@ object Test extends Builders {
         go(f(a))
       }
     }
-
-  implicit val monadPure: Monad[Test[Pure, *]] = new Monad[Test[Pure, *]] {
-    override def pure[A](x: A): Test[Pure, A] = Test.pure(x)
-
-    override def flatMap[A, B](
-        fa: Test[Pure, A]
-    )(f: A => Test[Pure, B]): Test[Pure, B] =
-      fa match {
-        case test: And[Pure, A]  => And(test.tests.map(flatMap(_)(f)))
-        case test: Eval[Pure, A] => flatMap(test.test)(f)
-        case test: Error         => test
-        case test: Failure       => test
-        case test: Label[Pure, A] =>
-          Label(test.description, flatMap(test.test)(f))
-        case test: Message[Pure, A] =>
-          Message(test.description, flatMap(test.test)(f))
-        case test: Not[Pure, A]  => Not(flatMap(test)(f))
-        case test: Or[Pure, A]   => Or(test.tests.map(flatMap(_)(f)))
-        case test: Skip[Pure, A] => Skip(flatMap(test.test)(f))
-        case test: Success[A]    => f(test.value)
-      }
-
-    override def tailRecM[A, B](a: A)(
-        f: A => Test[Pure, Either[A, B]]
-    ): Test[Pure, B] = ???
-  }
 
   implicit def monoidK[F[_]]: MonoidK[Test[F, *]] = new MonoidK[Test[F, *]] {
     override def empty[A]: Test[F, A] = Test.empty

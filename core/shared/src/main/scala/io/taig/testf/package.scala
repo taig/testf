@@ -1,5 +1,7 @@
 package io.taig
 
+import cats._
+
 package object testf {
   type Assertion[F[_]] = Test[F, Unit]
 
@@ -9,4 +11,6 @@ package object testf {
   }
 
   type Pure[A] <: Nothing
+
+  implicit val functor: Functor[Pure] = Functor[Id].asInstanceOf[Functor[Pure]]
 }
