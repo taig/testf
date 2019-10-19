@@ -20,7 +20,9 @@ private final class Macro(val c: blackbox.Context) {
     val appType = typeOf[AutoTestApp]
     val anyRefType = typeOf[AnyRef]
 
-    val result = tree match {
+    val typecheckedTree = c.typecheck(tree)
+
+    val result = typecheckedTree match {
       case q"$mods object $name extends ..$parents { $self => ..$body }" =>
         val filteredParents = parents.filterNot { tree =>
           val parent = c.typecheck(q"??? : $tree").tpe
@@ -39,7 +41,7 @@ private final class Macro(val c: blackbox.Context) {
             import _root_.cats.implicits._
 
             _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
-              ..${autoTests}
+              ..$autoTests
             ).parSequence.map(_root_.io.taig.testf.Test.and)
           }
         }
@@ -57,11 +59,10 @@ private final class Macro(val c: blackbox.Context) {
 
     val testType = typeOf[Test[Any, Any]]
 
-    val q"{..$typedBody}" = c.typecheck(q"{..$body}")
     val tests = collection.mutable.ListBuffer.empty[c.Tree]
     val remainingBody = collection.mutable.ListBuffer.empty[c.Tree]
 
-    typedBody.zipWithIndex.foreach {
+    body.zipWithIndex.foreach {
       case (tree, index) =>
         if (tree.tpe <:< testType) tests += q"${body(index)}.void.interpret"
         else remainingBody += body(index)
