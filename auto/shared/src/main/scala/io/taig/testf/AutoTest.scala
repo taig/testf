@@ -2,7 +2,7 @@ package io.taig.testf
 
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
-import scala.reflect.macros.{blackbox, TypecheckException}
+import scala.reflect.macros.blackbox
 
 class AutoTest extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro Macro.apply
@@ -39,7 +39,7 @@ private final class Macro(val c: blackbox.Context) {
             import _root_.cats.implicits._
 
             _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
-              ..$autoTests
+              ..${autoTests}
             ).parSequence.map(_root_.io.taig.testf.Test.and)
           }
         }
@@ -57,17 +57,16 @@ private final class Macro(val c: blackbox.Context) {
 
     val testType = typeOf[Test[Any, Any]]
 
-    val (tests, remainingBody) = body.partition { tree =>
-      try c.typecheck(tree).tpe <:< testType
-      catch {
-        case _: TypecheckException => false
-      }
+    val q"{..$typedBody}" = c.typecheck(q"{..$body}")
+    val tests = collection.mutable.ListBuffer.empty[c.Tree]
+    val remainingBody = collection.mutable.ListBuffer.empty[c.Tree]
+
+    typedBody.zipWithIndex.foreach {
+      case (tree, index) =>
+        if (tree.tpe <:< testType) tests += q"${body(index)}.void.interpret"
+        else remainingBody += body(index)
     }
 
-    val compiledTests = tests.map { tree =>
-      q"$tree.void.interpret"
-    }
-
-    (compiledTests, remainingBody)
+    (tests.toSeq, remainingBody.toSeq)
   }
 }

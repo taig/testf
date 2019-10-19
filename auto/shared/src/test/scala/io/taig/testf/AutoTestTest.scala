@@ -8,6 +8,10 @@ object AutoTestPlainTest {
   test("foo")(pure(42))
 
   force("bar")(IO.pure(unit))
+
+  def helper(value: String): Test[Pure, String] = pure(value)
+
+  test("foobar")(helper("foobar"))
 }
 
 @AutoTest
