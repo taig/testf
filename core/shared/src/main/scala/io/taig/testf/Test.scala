@@ -75,7 +75,9 @@ object Test extends Builders {
 
     def |(test: Test[F, A]): Test[F, A] = or(test)
 
-    def assert(f: A => Assertion[F])(implicit F: Functor[F]): Assertion[F] =
+    def assert(
+        f: A => Assertion[F]
+    )(implicit F: Monad[Test[F, *]]): Assertion[F] =
       test.flatMap(f)
   }
 
