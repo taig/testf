@@ -23,12 +23,12 @@ private final class Macro(val c: blackbox.Context) {
     val result = tree match {
       case q"$mods object $name extends ..$parents { $self => ..$body }" =>
         val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
-        val hasAutoTestAppParent = typedParents.exists(_.tpe <:< appType)
+        val autoTestAppParent = typedParents.find(_.tpe <:< appType)
         val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
 
-        val autoTestAppParents =
-          if (hasAutoTestAppParent) filteredParents
-          else tq"_root_.io.taig.testf.AutoTestApp" +: filteredParents
+        val autoTestAppParents = autoTestAppParent.getOrElse(
+          tq"_root_.io.taig.testf.AutoTestApp"
+        ) +: filteredParents
 
         val (autoTests, remainingBody) = findAutoTests(c)(body)
 
