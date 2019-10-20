@@ -74,6 +74,16 @@ object Test extends Builders {
 
     def assert(f: A => Assertion[F])(implicit F: Functor[F]): Assertion[F] =
       test.flatMap(f)
+
+    def collect[B](
+        f: PartialFunction[A, B]
+    )(implicit F: Functor[F]): Test[F, B] =
+      test.flatMap { value =>
+        f.lift(value) match {
+          case Some(value) => pure(value)
+          case None        => error("Collect filter mismatch")
+        }
+      }
   }
 
   implicit def monad[F[_]: Functor]: Monad[Test[F, *]] =
