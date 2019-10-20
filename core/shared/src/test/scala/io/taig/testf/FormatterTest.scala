@@ -27,40 +27,40 @@ object FormatterTest extends TestApp {
   val basic: Assertion[Pure] = test("basic")(
     test("error")(
       test("root") {
-        equal("✗ unlabeled" + "\n  " + "foo")(Formatter.test(Fixture.error))
+        isEqual("✗ unlabeled" + "\n  " + "foo")(Formatter.test(Fixture.error))
       },
       test("labeled") {
-        equal("✗ foobar" + "\n  " + "foo")(
+        isEqual("✗ foobar" + "\n  " + "foo")(
           Formatter.test(Fixture.label(Fixture.error))
         )
       }
     ),
     test("failure")(
       test("root") {
-        equal("⚡unlabeled" + "\n" + Fixture.stacktrace)(
+        isEqual("⚡unlabeled" + "\n" + Fixture.stacktrace)(
           Formatter.test(Fixture.failure)
         )
       },
       test("labeled") {
-        equal("⚡foobar" + "\n" + Fixture.stacktrace)(
+        isEqual("⚡foobar" + "\n" + Fixture.stacktrace)(
           Formatter.test(Fixture.label(Fixture.failure))
         )
       }
     ),
     test("success")(
       test("root") {
-        equal("✓ unlabeled")(Formatter.test(Fixture.success))
+        isEqual("✓ unlabeled")(Formatter.test(Fixture.success))
       },
       test("labeled") {
-        equal("✓ foobar")(Formatter.test(Fixture.label(Fixture.success)))
+        isEqual("✓ foobar")(Formatter.test(Fixture.label(Fixture.success)))
       }
     ),
     test("skip")(
       test("root") {
-        equal("@ unlabeled")(Formatter.test(Fixture.skip))
+        isEqual("@ unlabeled")(Formatter.test(Fixture.skip))
       },
       test("labeled") {
-        equal("@ foobar")(Formatter.test(Fixture.label(Fixture.skip)))
+        isEqual("@ foobar")(Formatter.test(Fixture.label(Fixture.skip)))
       }
     ),
     test("skip dummy")(Fixture.skip)
@@ -69,18 +69,18 @@ object FormatterTest extends TestApp {
   val skip: Assertion[Pure] = test("skip")(
     test("falls back to inner label") {
       val test = Test.skip(Fixture.label(Test.empty))
-      equal("@ foobar")(Formatter.test(test))
+      isEqual("@ foobar")(Formatter.test(test))
     }
   )
 
   val unlabeled: Assertion[Pure] = test("unlabeled")(
     test("shows amount of unlabeled tests") {
       val test = Fixture.label(Test.allOf(Fixture.success, Fixture.success))
-      equal("✓ foobar (2)")(Formatter.test(test))
+      isEqual("✓ foobar (2)")(Formatter.test(test))
     },
     test("shows amount succeeded tests") {
       val test = Fixture.label(Test.allOf(Fixture.success, Fixture.error))
-      equal("✗ foobar (1/2)" + "\n  " + "foo")(Formatter.test(test))
+      isEqual("✗ foobar (1/2)" + "\n  " + "foo")(Formatter.test(test))
     }
   )
 

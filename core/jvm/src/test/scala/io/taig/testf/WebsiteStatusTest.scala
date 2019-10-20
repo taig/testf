@@ -20,7 +20,7 @@ object WebsiteStatusTest extends TestApp {
     }
 
   def is200(url: String): Assertion[IO] =
-    eval(url)(request(url)).assert(equal(200))
+    eval(url)(request(url)).assert(isEqual(200))
 
   val urls: List[String] = List(
     "https://typelevel.org/",

@@ -17,8 +17,8 @@ object StringTest extends TestApp {
   val concatenate: Assertion[Pure] =
     test("concatenate") {
       check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>
-        test("lengthA")(gte(a.length)((a + b).length)) &
-          test("lengthB")(gte(b.length)((a + b).length))
+        test("lengthA")(isGte(a.length)((a + b).length)) &
+          test("lengthB")(isGte(b.length)((a + b).length))
       }
     }
 
@@ -29,7 +29,7 @@ object StringTest extends TestApp {
         Gen.alphaNumStr,
         Gen.alphaNumStr
       ) { (a, b, c) =>
-        equal(b)((a + b + c).substring(a.length, a.length + b.length))
+        isEqual(b)((a + b + c).substring(a.length, a.length + b.length))
       }
     }
 
