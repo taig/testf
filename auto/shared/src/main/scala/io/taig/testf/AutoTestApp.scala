@@ -1,14 +1,11 @@
 package io.taig.testf
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
+import io.taig.testf.internal.Contexts
 
-abstract class AutoTestApp extends TestApp {
-  def auto: IO[Assertion[Pure]] = {
-    val message = "No auto tests were discovered. " +
-      "Did you forget the @AutoTest annotation?"
-
-    IO.raiseError(new IllegalStateException(message))
-  }
+abstract class AutoTestApp extends TestApp with AutoTestDiscovery {
+  override protected implicit def contextShit: ContextShift[IO] =
+    Contexts.contextShift
 
   override def suite: IO[Assertion[Pure]] = {
     val name = getClass.getName.replace("$", "")

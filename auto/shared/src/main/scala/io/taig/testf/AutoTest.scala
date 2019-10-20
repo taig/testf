@@ -5,34 +5,35 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 class AutoTest extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro Macro.apply
+  def macroTransform(annottees: Any*): Any = macro AutoTest.Macro.apply
 }
 
-private final class Macro(val c: blackbox.Context) {
-  def apply(annottees: c.Expr[Any]*): c.Expr[Any] = {
-    import c.universe._
+private object AutoTest {
+  final class Macro(val c: blackbox.Context) {
+    def apply(annottees: c.Expr[Any]*): c.Expr[Any] = {
+      import c.universe._
 
-    val tree = annottees match {
-      case head :: Nil => head.tree
-      case _           => c.abort(c.enclosingPosition, "Only objects allowed")
-    }
+      val tree = annottees match {
+        case head :: Nil => head.tree
+        case _           => c.abort(c.enclosingPosition, "Only objects allowed")
+      }
 
-    val appType = typeOf[AutoTestApp]
-    val anyRefType = typeOf[AnyRef]
+      val appType = typeOf[AutoTestDiscovery]
+      val anyRefType = typeOf[AnyRef]
 
-    val result = tree match {
-      case q"$mods object $name extends ..$parents { $self => ..$body }" =>
-        val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
-        val autoTestAppParent = typedParents.find(_.tpe <:< appType)
-        val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
+      val result = tree match {
+        case q"$mods object $name extends ..$parents { $self => ..$body }" =>
+          val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
+          val autoTestAppParent = typedParents.find(_.tpe <:< appType)
+          val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
 
-        val autoTestAppParents = autoTestAppParent.getOrElse(
-          tq"_root_.io.taig.testf.AutoTestApp"
-        ) +: filteredParents
+          val autoTestAppParents = autoTestAppParent.getOrElse(
+            tq"_root_.io.taig.testf.AutoTestDiscovery"
+          ) +: filteredParents
 
-        val (autoTests, remainingBody) = findAutoTests(c)(body)
+          val (autoTests, remainingBody) = findAutoTests(c)(body)
 
-        q"""
+          q"""
         $mods object $name extends ..$autoTestAppParents { $self =>
           ..$remainingBody
 
@@ -45,17 +46,18 @@ private final class Macro(val c: blackbox.Context) {
           }
         }
         """
-      case _ => c.abort(c.enclosingPosition, "Only object allowed")
+        case _ => c.abort(c.enclosingPosition, "Only object allowed")
+      }
+
+      c.Expr(result)
     }
 
-    c.Expr(result)
-  }
-
-  def findAutoTests(
-      c: blackbox.Context
-  )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = {
-    import c.universe._
-    val (tests, remainingBody) = body.partition(_.isTerm)
-    (tests.map(tree => q"$tree.void.interpret"), remainingBody)
+    def findAutoTests(
+        c: blackbox.Context
+    )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = {
+      import c.universe._
+      val (tests, remainingBody) = body.partition(_.isTerm)
+      (tests.map(tree => q"$tree.void.interpret"), remainingBody)
+    }
   }
 }
