@@ -2,17 +2,14 @@ package io.taig.testf
 
 import cats.effect.{Bracket, IO}
 import cats.implicits._
-import cats.{Id, Parallel}
+import cats.{Id, Monad, Parallel}
 
 trait Interpreter[F[_], G[_]] {
   def interpret[A](test: Test[F, A]): G[Test[Pure, A]]
 }
 
 object Interpreter extends Interpreter1 {
-  implicit def effect[F[_]](
-      implicit F: Bracket[F, Throwable],
-      P: Parallel[F]
-  ): Interpreter[F, F] =
+  implicit def effect[F[_]: Monad](implicit P: Parallel[F]): Interpreter[F, F] =
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
@@ -25,11 +22,10 @@ object Interpreter extends Interpreter1 {
             interpret(test.test).map(Test.Label(test.description, _))
           case test: Test.Message[F, A] =>
             interpret(test.test).map(Test.Message(test.description, _))
-          case test: Test.Not[F, A] => interpret(test.test).map(Test.Not.apply)
+          case test: Test.Not[F, A] => interpret(test.test).map(Test.not)
           case test: Test.Or[F, A] =>
             test.tests.parTraverse(interpret[A]).map(Test.or)
-          case test: Test.Skip[F, A] =>
-            interpret(test.test).map(Test.Skip.apply)
+          case test: Test.Skip[F, A] => interpret(test.test).map(Test.skip)
           case test: Test.Success[A] => test.pure[F].widen
         }
     }
@@ -45,9 +41,7 @@ object Interpreter extends Interpreter1 {
 }
 
 trait Interpreter1 {
-  implicit def sequential[F[_]](
-      implicit F: Bracket[F, Throwable]
-  ): Interpreter[F, F] =
+  implicit def sequential[F[_]: Monad]: Interpreter[F, F] =
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
@@ -60,11 +54,10 @@ trait Interpreter1 {
             interpret(test.test).map(Test.Label(test.description, _))
           case test: Test.Message[F, A] =>
             interpret(test.test).map(Test.Message(test.description, _))
-          case test: Test.Not[F, A] => interpret(test.test).map(Test.Not.apply)
+          case test: Test.Not[F, A] => interpret(test.test).map(Test.not)
           case test: Test.Or[F, A] =>
             test.tests.traverse(interpret[A]).map(Test.or)
-          case test: Test.Skip[F, A] =>
-            interpret(test.test).map(Test.Skip.apply)
+          case test: Test.Skip[F, A] => interpret(test.test).map(Test.skip)
           case test: Test.Success[A] => test.pure[F].widen
         }
     }
