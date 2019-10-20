@@ -31,6 +31,11 @@ trait Assertions {
   def isEmpty[A: Monoid: Eq: Show](value: A): Assertion[Pure] =
     assertion(value.isEmpty, show"'$value' is not empty")
 
+  def isEmptyK[F[_]: MonoidK, A](
+      value: F[A]
+  )(implicit eq: Eq[F[A]], show: Show[F[A]]): Assertion[Pure] =
+    isEmpty[F[A]](value)(MonoidK[F].algebra, Eq[F[A]], Show[F[A]])
+
   def lt[A: PartialOrder: Show](expected: A)(actual: A): Assertion[Pure] =
     assertion(actual < expected, s"'$actual' is not < '$expected'")
 
