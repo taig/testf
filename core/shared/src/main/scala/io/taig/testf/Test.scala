@@ -1,7 +1,6 @@
 package io.taig.testf
 
 import cats._
-import cats.effect.IO
 import cats.implicits._
 
 sealed abstract class Test[+F[_], +A] extends Product with Serializable {
@@ -32,16 +31,10 @@ object Test extends Builders {
   final case class Success[A](value: A) extends Test[Pure, A]
 
   final implicit class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
-    def interpret(implicit interpreter: Interpreter[F]): IO[Test[Pure, A]] =
+    def interpret[G[_]](
+        implicit interpreter: Interpreter[F, G]
+    ): G[Test[Pure, A]] =
       interpreter.interpret(test)
-
-    def parInterpret(
-        implicit interpreter: ParInterpreter[F]
-    ): IO[Test[Pure, A]] = interpreter.interpret(test)
-
-    def seqInterpret(
-        implicit interpreter: SeqInterpreter[F]
-    ): IO[Test[Pure, A]] = interpreter.interpret(test)
 
     def mapK[G[α] >: F[α]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] =
       test match {

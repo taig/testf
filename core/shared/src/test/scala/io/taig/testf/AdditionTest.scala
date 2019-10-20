@@ -29,6 +29,6 @@ object AdditionTest extends TestApp {
       negativePlusPositive,
       optionalAddition,
       listSum
-    ).interpret
+    ).interpret[IO]
 
 }

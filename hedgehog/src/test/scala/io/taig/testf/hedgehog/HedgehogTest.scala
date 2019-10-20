@@ -17,5 +17,5 @@ object HedgehogTest extends TestApp {
     }
 
   override val suite: IO[Assertion[Pure]] =
-    test("HedgehogTest")(reverse).interpret
+    test("HedgehogTest")(reverse).interpret[IO]
 }

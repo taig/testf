@@ -1,7 +1,7 @@
 package io.taig.testf
 
 import cats._
-import cats.data.{EitherT, OptionT}
+import cats.data._
 import cats.implicits._
 
 trait Builders {

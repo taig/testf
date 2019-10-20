@@ -11,5 +11,5 @@ object OptionTest extends TestApp {
     verify("MonadLaws", MonadTests[Option].monad[Int, Int, String])
 
   override val suite: IO[Assertion[Pure]] =
-    test("OptionTest")(monadLaws).interpret
+    test("OptionTest")(monadLaws).interpret[IO]
 }

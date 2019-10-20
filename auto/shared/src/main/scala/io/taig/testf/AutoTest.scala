@@ -57,7 +57,10 @@ private object AutoTest {
     )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = {
       import c.universe._
       val (tests, remainingBody) = body.partition(_.isTerm)
-      (tests.map(tree => q"$tree.void.interpret"), remainingBody)
+      (
+        tests.map(tree => q"$tree.void.interpret[_root_.cats.effect.IO]"),
+        remainingBody
+      )
     }
   }
 }

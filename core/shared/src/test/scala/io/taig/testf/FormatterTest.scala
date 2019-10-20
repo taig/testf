@@ -85,5 +85,5 @@ object FormatterTest extends TestApp {
   )
 
   override def suite: IO[Assertion[Pure]] =
-    test("FormatterTest")(basic, skip, unlabeled).interpret
+    test("FormatterTest")(basic, skip, unlabeled).interpret[IO]
 }
