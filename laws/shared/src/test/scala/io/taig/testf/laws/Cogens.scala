@@ -6,6 +6,7 @@ import org.scalacheck.rng.Seed
 
 object Cogens {
   implicit val cogenTest: Cogen[Assertion[Pure]] = Cogen({
+    case (seed, Test.Allocation(test, _))    => Cogen.perturb(seed, test)
     case (seed, Test.And(tests))             => Cogen.perturb(seed, tests)
     case (seed, test: Test.Eval[Pure, Unit]) => Cogen.perturb(seed, test.test)
     case (seed, Test.Error(message))         => Cogen.perturb(seed, message)

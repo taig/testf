@@ -1,23 +1,31 @@
 package io.taig.testf
 
-import cats.effect.{Bracket, IO}
+import cats._
+import cats.effect.IO
 import cats.implicits._
-import cats.{Id, Monad, Parallel}
 
 trait Interpreter[F[_], G[_]] {
   def interpret[A](test: Test[F, A]): G[Test[Pure, A]]
 }
 
 object Interpreter extends Interpreter1 {
-  implicit def effect[F[_]: Monad](implicit P: Parallel[F]): Interpreter[F, F] =
+  implicit def effect[F[_]](
+      implicit F: MonadError[F, Throwable],
+      P: Parallel[F]
+  ): Interpreter[F, F] =
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
+          case test: Test.Allocation[F, A] =>
+            interpret(test.test).handleErrorWith { throwable =>
+              test.finalizer *> F.raiseError(throwable)
+            }
           case test: Test.And[F, A] =>
             test.tests.parTraverse(interpret[A]).map(Test.and)
-          case test: Test.Eval[F, A] => test.test.flatMap(interpret[A])
-          case test: Test.Error      => test.pure[F].widen
-          case test: Test.Failure    => test.pure[F].widen
+          case test: Test.Eval[F, A] =>
+            test.test.flatMap(interpret[A]).handleError(Test.failure)
+          case test: Test.Error   => test.pure[F].widen
+          case test: Test.Failure => test.pure[F].widen
           case test: Test.Label[F, A] =>
             interpret(test.test).map(Test.Label(test.description, _))
           case test: Test.Message[F, A] =>
@@ -41,15 +49,22 @@ object Interpreter extends Interpreter1 {
 }
 
 trait Interpreter1 {
-  implicit def sequential[F[_]: Monad]: Interpreter[F, F] =
+  implicit def sequential[F[_]](
+      implicit F: MonadError[F, Throwable]
+  ): Interpreter[F, F] =
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
+          case test: Test.Allocation[F, A] =>
+            interpret(test.test).handleErrorWith { throwable =>
+              test.finalizer *> F.raiseError(throwable)
+            }
           case test: Test.And[F, A] =>
             test.tests.traverse(interpret[A]).map(Test.and)
-          case test: Test.Eval[F, A] => test.test.flatMap(interpret[A])
-          case test: Test.Error      => test.pure[F].widen
-          case test: Test.Failure    => test.pure[F].widen
+          case test: Test.Eval[F, A] =>
+            test.test.flatMap(interpret[A]).handleError(Test.failure)
+          case test: Test.Error   => test.pure[F].widen
+          case test: Test.Failure => test.pure[F].widen
           case test: Test.Label[F, A] =>
             interpret(test.test).map(Test.Label(test.description, _))
           case test: Test.Message[F, A] =>

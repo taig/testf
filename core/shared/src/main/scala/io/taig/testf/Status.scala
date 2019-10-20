@@ -41,15 +41,16 @@ object Status {
   }
 
   def of(test: Test[Id, _]): Status = test match {
-    case Test.And(tests)        => tests.map(of).foldLeft[Status](Success)(and)
-    case test: Test.Eval[Id, _] => of(test.test)
-    case Test.Error(_)          => Status.Error
-    case Test.Failure(_)        => Status.Failure
-    case Test.Label(_, test)    => of(test)
-    case Test.Message(_, test)  => of(test)
-    case Test.Not(test)         => not(of(test))
-    case Test.Or(tests)         => tests.map(of).foldLeft[Status](Success)(or)
-    case Test.Skip(_)           => Status.Skip
-    case Test.Success(_)        => Status.Success
+    case Test.Allocation(test, _) => of(test)
+    case Test.And(tests)          => tests.map(of).foldLeft[Status](Success)(and)
+    case test: Test.Eval[Id, _]   => of(test.test)
+    case Test.Error(_)            => Status.Error
+    case Test.Failure(_)          => Status.Failure
+    case Test.Label(_, test)      => of(test)
+    case Test.Message(_, test)    => of(test)
+    case Test.Not(test)           => not(of(test))
+    case Test.Or(tests)           => tests.map(of).foldLeft[Status](Success)(or)
+    case Test.Skip(_)             => Status.Skip
+    case Test.Success(_)          => Status.Success
   }
 }

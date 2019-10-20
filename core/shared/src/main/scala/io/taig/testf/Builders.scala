@@ -2,9 +2,10 @@ package io.taig.testf
 
 import cats._
 import cats.data._
+import cats.effect.{Bracket, Resource}
 import cats.implicits._
 
-trait Builders {
+trait Builders { self =>
   def and[F[_], A](tests: List[Test[F, A]]): Test[F, A] = Test.And(tests)
 
   val empty: Test[Pure, Nothing] = Test.And(List.empty)
@@ -67,6 +68,13 @@ trait Builders {
     Test.Message(description, test)
 
   def or[F[_], A](tests: List[Test[F, A]]): Test[F, A] = Test.Or(tests)
+
+  def resource[F[_], A](
+      value: Resource[F, A]
+  )(implicit F: Bracket[F, Throwable]): Test[F, A] =
+    force(value.allocated.map[Test[F, A]] {
+      case (value, finalizer) => Test.Allocation(pure(value), finalizer)
+    })
 
   def skip[F[_], A](test: Test[F, A]): Test[F, A] = Test.Skip(test)
 
