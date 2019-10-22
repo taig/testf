@@ -104,7 +104,7 @@ object Test extends Builders {
             Label(test.description, flatMap(test.test)(f))
           case test: Message[F, A] =>
             Message(test.description, flatMap(test.test)(f))
-          case test: Not[F, A]  => Not(flatMap(test)(f))
+          case test: Not[F, A]  => Not(flatMap(test.test)(f))
           case test: Or[F, A]   => Or(test.tests.map(flatMap(_)(f)))
           case test: Skip[F, A] => Skip(flatMap(test.test)(f))
           case test: Success[A] => f(test.value)
