@@ -11,12 +11,13 @@ lazy val testf = project
     hedgehog,
     laws.jvm,
     laws.js,
+    runnerSbt.jvm,
+    runnerSbt.js,
     scalacheck.jvm,
     scalacheck.js
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
-  .withoutSuffixFor(JVMPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
@@ -38,8 +39,19 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         Nil
   )
 
+lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
+  .settings(sonatypePublishSettings)
+  .settings(
+    libraryDependencies ++=
+      "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
+        Nil,
+    name := "Runner Sbt",
+    testFrameworks += new TestFramework(
+      s"${organization.value}.testf.runner.TestF"
+    )
+  )
+
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
-  .withoutSuffixFor(JVMPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     testFrameworks += new TestFramework(
@@ -54,7 +66,6 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(core)
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
-  .withoutSuffixFor(JVMPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
@@ -74,7 +85,6 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(core)
 
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
-  .withoutSuffixFor(JVMPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
