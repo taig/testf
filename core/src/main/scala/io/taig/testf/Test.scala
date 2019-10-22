@@ -68,6 +68,34 @@ object Test extends Builders {
 
     def |(test: Test[F, A]): Test[F, A] = or(test)
 
+    def map[B](f: A => B)(implicit F: Functor[F]): Test[F, B] = test match {
+      case test: And[F, A]     => And(test.tests.map(_.map(f)))
+      case test: Eval[F, A]    => Eval(test.test.map(_.map(f)))
+      case test: Error         => test
+      case test: Failure       => test
+      case test: Label[F, A]   => Label(test.description, test.test.map(f))
+      case test: Message[F, A] => Message(test.description, test.test.map(f))
+      case test: Not[F, A]     => Not(test.test.map(f))
+      case test: Or[F, A]      => Or(test.tests.map(_.map(f)))
+      case test: Skip[F, A]    => Skip(test.test.map(f))
+      case test: Success[A]    => Success(f(test.value))
+    }
+
+    def flatMap[B](f: A => Test[F, B])(implicit F: Functor[F]): Test[F, B] =
+      test match {
+        case test: And[F, A]   => And(test.tests.map(_.flatMap(f)))
+        case test: Eval[F, A]  => Eval(test.test.map(_.flatMap(f)))
+        case test: Error       => test
+        case test: Failure     => test
+        case test: Label[F, A] => Label(test.description, test.test.flatMap(f))
+        case test: Message[F, A] =>
+          Message(test.description, test.test.flatMap(f))
+        case test: Not[F, A]  => Not(test.test.flatMap(f))
+        case test: Or[F, A]   => Or(test.tests.map(_.flatMap(f)))
+        case test: Skip[F, A] => Skip(test.test.flatMap(f))
+        case test: Success[A] => f(test.value)
+      }
+
     def assert(f: A => Assertion[F])(implicit F: Functor[F]): Assertion[F] =
       test.flatMap(f)
 
@@ -86,23 +114,12 @@ object Test extends Builders {
     new Monad[Test[F, *]] {
       override def pure[A](x: A): Test[F, A] = Success(x)
 
+      override def map[A, B](fa: Test[F, A])(f: A => B): Test[F, B] =
+        fa.map(f)
+
       override def flatMap[A, B](
           fa: Test[F, A]
-      )(f: A => Test[F, B]): Test[F, B] =
-        fa match {
-          case test: And[F, A]  => And(test.tests.map(flatMap(_)(f)))
-          case test: Eval[F, A] => Eval(test.test.map(flatMap(_)(f)))
-          case test: Error      => test
-          case test: Failure    => test
-          case test: Label[F, A] =>
-            Label(test.description, flatMap(test.test)(f))
-          case test: Message[F, A] =>
-            Message(test.description, flatMap(test.test)(f))
-          case test: Not[F, A]  => Not(flatMap(test.test)(f))
-          case test: Or[F, A]   => Or(test.tests.map(flatMap(_)(f)))
-          case test: Skip[F, A] => Skip(flatMap(test.test)(f))
-          case test: Success[A] => f(test.value)
-        }
+      )(f: A => Test[F, B]): Test[F, B] = fa.flatMap(f)
 
       override def tailRecM[A, B](a: A)(
           f: A => Test[F, Either[A, B]]
