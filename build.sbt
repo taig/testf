@@ -20,6 +20,7 @@ lazy val testf = project
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
@@ -29,6 +30,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
 
 lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .in(file("runner-sbt"))
   .settings(sonatypePublishSettings)
   .settings(
@@ -49,6 +51,7 @@ lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(core)
 
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .settings(sonatypePublishSettings)
   .jsSettings(
     libraryDependencies ++=
@@ -58,6 +61,7 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(core)
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
@@ -74,6 +78,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .dependsOn(core)
 
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
