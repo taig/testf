@@ -1,5 +1,13 @@
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
+val catsVersion = "2.0.0"
+val catsEffectVersion = "2.0.0"
+val hedgehogVersion = "0.1.0"
+val portableScalaReflectVersion = "0.1.0"
+val scalajsTestInterfaceVersion = "0.6.29"
+val scalacheckVersion = "1.14.2"
+val testInterfaceVersion = "1.0"
+
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings)
@@ -24,8 +32,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-effect" % "2.0.0" ::
-        "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
+      "org.typelevel" %%% "cats-effect" % catsEffectVersion ::
+        "org.portable-scala" %%% "portable-scala-reflect" % portableScalaReflectVersion ::
         Nil
   )
 
@@ -40,12 +48,12 @@ lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
   )
   .jvmSettings(
     libraryDependencies ++=
-      "org.scala-sbt" % "test-interface" % "1.0" ::
+      "org.scala-sbt" % "test-interface" % testInterfaceVersion ::
         Nil
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-js" %% "scalajs-test-interface" % "0.6.29" ::
+      "org.scala-js" %% "scalajs-test-interface" % scalajsTestInterfaceVersion ::
         Nil
   )
   .dependsOn(core)
@@ -65,7 +73,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.scalacheck" %%% "scalacheck" % "1.14.2" ::
+      "org.scalacheck" %%% "scalacheck" % scalacheckVersion ::
         Nil,
     sourceGenerators in Compile += Def.task {
       val pkg = s"${organization.value}.testf"
@@ -82,7 +90,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-laws" % "2.0.0" ::
+      "org.typelevel" %%% "cats-laws" % catsVersion ::
         Nil
   )
   .dependsOn(scalacheck)
@@ -91,8 +99,8 @@ lazy val hedgehog = project
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
-      "hedgehog" %% "hedgehog-core" % "0.1.0" ::
-        "hedgehog" %% "hedgehog-runner" % "0.1.0" ::
+      "hedgehog" %% "hedgehog-core" % hedgehogVersion ::
+        "hedgehog" %% "hedgehog-runner" % hedgehogVersion ::
         Nil,
     resolvers += Resolver.url(
       "hedgehog",
@@ -110,12 +118,3 @@ lazy val tests = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(core, runnerSbt, auto, scalacheck, laws)
   .jvmConfigure(_.dependsOn(hedgehog))
-
-addCommandAlias(
-  "testJVM",
-  ";core/test;auto/test;scalacheck/test;laws/test;hedgehog/test"
-)
-addCommandAlias(
-  "testJS",
-  ";coreJS/test;autoJS/test;scalacheckJS/test;lawsJS/test"
-)
