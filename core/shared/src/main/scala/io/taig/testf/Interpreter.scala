@@ -16,8 +16,6 @@ object Interpreter extends Interpreter1 {
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
-          case test: Test.Allocation[F, A] =>
-            interpret(test.test) <* test.finalizer
           case test: Test.And[F, A] =>
             test.tests.parTraverse(interpret[A]).map(Test.and)
           case test: Test.Eval[F, A] =>
@@ -53,8 +51,6 @@ trait Interpreter1 {
     new Interpreter[F, F] {
       override def interpret[A](test: Test[F, A]): F[Test[Pure, A]] =
         test match {
-          case test: Test.Allocation[F, A] =>
-            interpret(test.test) <* test.finalizer
           case test: Test.And[F, A] =>
             test.tests.traverse(interpret[A]).map(Test.and)
           case test: Test.Eval[F, A] =>

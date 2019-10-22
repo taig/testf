@@ -8,9 +8,6 @@ sealed abstract class Test[+F[_], +A] extends Product with Serializable {
 }
 
 object Test extends Builders {
-  final case class Allocation[F[_], A](test: Test[F, A], finalizer: F[Unit])
-      extends Test[F, A]
-
   final case class And[F[_], A](tests: List[Test[F, A]]) extends Test[F, A]
 
   final case class Eval[F[_], A](test: F[Test[F, A]]) extends Test[F, A]
@@ -41,17 +38,16 @@ object Test extends Builders {
 
     def mapK[G[α] >: F[α]](f: F ~> G)(implicit F: Functor[F]): Test[G, A] =
       test match {
-        case Allocation(test, finalizer) => Allocation(test.mapK(f), finalizer)
-        case And(tests)                  => And(tests.map(_.mapK(f)))
-        case Eval(test)                  => Eval(test.map(_.mapK(f)))
-        case test: Error                 => test
-        case test: Failure               => test
-        case Label(description, test)    => Label(description, test.mapK(f))
-        case Message(description, test)  => Message(description, test.mapK(f))
-        case Not(test)                   => Not(test.mapK(f))
-        case Or(tests)                   => Or(tests.map(_.mapK(f)))
-        case Skip(test)                  => Skip(test.mapK(f))
-        case test: Success[A]            => test
+        case And(tests)                 => And(tests.map(_.mapK(f)))
+        case Eval(test)                 => Eval(test.map(_.mapK(f)))
+        case test: Error                => test
+        case test: Failure              => test
+        case Label(description, test)   => Label(description, test.mapK(f))
+        case Message(description, test) => Message(description, test.mapK(f))
+        case Not(test)                  => Not(test.mapK(f))
+        case Or(tests)                  => Or(tests.map(_.mapK(f)))
+        case Skip(test)                 => Skip(test.mapK(f))
+        case test: Success[A]           => test
       }
 
     def and(test: Test[F, A]): Test[F, A] = (this.test, test) match {
@@ -94,8 +90,6 @@ object Test extends Builders {
           fa: Test[F, A]
       )(f: A => Test[F, B]): Test[F, B] =
         fa match {
-          case test: Allocation[F, A] =>
-            Allocation(flatMap(test.test)(f), test.finalizer)
           case test: And[F, A]  => And(test.tests.map(flatMap(_)(f)))
           case test: Eval[F, A] => Eval(test.test.map(flatMap(_)(f)))
           case test: Error      => test
@@ -116,8 +110,6 @@ object Test extends Builders {
         // TODO tailrec, see https://github.com/typelevel/cats/pull/1041/files#diff-e4d8b82ab5544972195d955591ffe18cR31
         def go(test: Test[F, Either[A, B]]): Test[F, B] =
           test match {
-            case test: Allocation[F, Either[A, B]] =>
-              Allocation(go(test.test), test.finalizer)
             case test: And[F, Either[A, B]]  => And(test.tests.map(go))
             case test: Eval[F, Either[A, B]] => Eval(test.test.map(go))
             case test: Error                 => test
@@ -149,10 +141,9 @@ object Test extends Builders {
   implicit def monoid[F[_], A]: Monoid[Test[F, A]] = monoidK[F].algebra
 
   implicit def eq[A: Eq]: Eq[Test[Pure, A]] = {
-    case (Allocation(x, _), Allocation(y, _)) => x === y
-    case (And(x), And(y))                     => x === y
-    case (And(x :: Nil), y)                   => x === y
-    case (x, And(y :: Nil))                   => x === y
+    case (And(x), And(y))   => x === y
+    case (And(x :: Nil), y) => x === y
+    case (x, And(y :: Nil)) => x === y
     case (x: Eval[Pure, A], y: Eval[Pure, A]) =>
       (x.test: Test[Pure, A]) === y.test
     case (Error(x), Error(y)) => x === y

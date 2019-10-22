@@ -12,9 +12,8 @@ object Formatter {
       color: Boolean,
       level: Int
   ): Test[Id, A] => Option[String] = {
-    case Test.Allocation(test, _) => Formatter.test(color, level)(test)
-    case Test.And(tests)          => both(color, level)(tests)
-    case test: Test.Eval[Id, A]   => Formatter.test(color, level)(test.test)
+    case Test.And(tests)        => both(color, level)(tests)
+    case test: Test.Eval[Id, A] => Formatter.test(color, level)(test.test)
     case Test.Error(message) =>
       error("unlabeled", message.some, color).some
     case Test.Failure(throwable) =>
