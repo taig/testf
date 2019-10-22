@@ -2,7 +2,6 @@ package io.taig.testf
 
 import cats.effect.IO
 import cats.implicits._
-import io.taig.testf._
 import io.taig.testf.dsl._
 import org.scalacheck.Gen
 
