@@ -1,4 +1,4 @@
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val testf = project
   .in(file("."))
@@ -14,19 +14,27 @@ lazy val testf = project
     runnerSbt.jvm,
     runnerSbt.js,
     scalacheck.jvm,
-    scalacheck.js
+    scalacheck.js,
+    tests.jvm,
+    tests.js
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
   .settings(
     libraryDependencies ++=
-      "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
-        "org.typelevel" %%% "cats-effect" % "2.0.0" ::
-        Nil,
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
+      "org.typelevel" %%% "cats-effect" % "2.0.0" ::
+        "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
+        Nil
+  )
+
+lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
+  .in(file("runner-sbt"))
+  .settings(sonatypePublishSettings)
+  .settings(
+    libraryDependencies ++=
+      Nil,
+    name := "Runner Sbt"
   )
   .jvmSettings(
     libraryDependencies ++=
@@ -38,26 +46,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.scala-js" %% "scalajs-test-interface" % "0.6.29" ::
         Nil
   )
-
-lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
-  .settings(sonatypePublishSettings)
-  .settings(
-    libraryDependencies ++=
-      "org.portable-scala" %%% "portable-scala-reflect" % "0.1.0" ::
-        Nil,
-    name := "Runner Sbt",
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
-  )
+  .dependsOn(core)
 
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .settings(sonatypePublishSettings)
-  .settings(
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
-  )
   .jsSettings(
     libraryDependencies ++=
       "org.scala-lang" % "scala-reflect" % scalaVersion.value ::
@@ -77,10 +69,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
       val file = (sourceManaged in Compile).value / s"$name.scala"
       IO.write(file, ScalacheckGenerator(pkg, name))
       Seq(file)
-    }.taskValue,
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
+    }.taskValue
   )
   .dependsOn(core)
 
@@ -89,10 +78,7 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .settings(
     libraryDependencies ++=
       "org.typelevel" %%% "cats-laws" % "2.0.0" ::
-        Nil,
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
+        Nil
   )
   .dependsOn(scalacheck)
 
@@ -106,12 +92,19 @@ lazy val hedgehog = project
     resolvers += Resolver.url(
       "hedgehog",
       url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
-    )(Resolver.ivyStylePatterns),
+    )(Resolver.ivyStylePatterns)
+  )
+  .dependsOn(core.jvm)
+
+lazy val tests = crossProject(JVMPlatform, JSPlatform)
+  .settings(noPublishSettings)
+  .settings(
     testFrameworks += new TestFramework(
       s"${organization.value}.testf.runner.TestF"
     )
   )
-  .dependsOn(core.jvm)
+  .dependsOn(core, runnerSbt, auto, scalacheck, laws)
+  .jvmConfigure(_.dependsOn(hedgehog))
 
 addCommandAlias(
   "testJVM",

@@ -23,7 +23,7 @@ test-jvm:
   stage: test
   image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
   script:
-    - sbt -Dmode=strict scalafmtCheckAll coverage +testJVM coverageReport coverageAggregate
+    - sbt -Dmode=strict scalafmtCheckAll coverage +testsJVM/test coverageReport coverageAggregate
     - mv target/scala-2.13/scoverage-report/ coverage/
     - sbt -Dmode=strict publishLocal
   artifacts:
@@ -35,7 +35,7 @@ test-js:
   stage: test
   image: $CONTAINER_IMAGE:$CI_COMMIT_SHA
   script:
-    - sbt -Dmode=strict +testJS
+    - sbt -Dmode=strict +testsJS/test
 
 
 publish:
