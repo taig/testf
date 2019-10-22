@@ -12,10 +12,9 @@ object TestTest extends TestApp {
     Generators.test
   )
 
-  val eqLaws: Assertion[Pure] =
-    LawsAssertions.verify("EqLaws", EqTests[Assertion[Pure]].eqv)
+  val eqLaws: Assertion[Pure] = verify("EqLaws", EqTests[Assertion[Pure]].eqv)
 
-  val semigroupLaws: Assertion[Pure] = LawsAssertions.verify(
+  val semigroupLaws: Assertion[Pure] = verify(
     "SemigroupLaws",
     SemigroupTests[Assertion[Pure]].semigroup
   )

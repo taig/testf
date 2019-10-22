@@ -1,4 +1,4 @@
-package io.taig.testf.scalacheck
+package io.taig.testf
 
 import cats.effect.IO
 import cats.implicits._

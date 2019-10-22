@@ -7,7 +7,7 @@ import io.taig.testf.dsl._
 
 object OptionTest extends TestApp {
   val monadLaws: Assertion[Pure] =
-    LawsAssertions.verify(
+    verify(
       "MonadLaws",
       MonadTests[Option].monad[Int, Int, String]
     )
