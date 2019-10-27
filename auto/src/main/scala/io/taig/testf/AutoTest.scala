@@ -18,9 +18,6 @@ private object AutoTest {
         case _           => c.abort(c.enclosingPosition, "???")
       }
 
-      val autoTestDiscoveryType = typeOf[AutoTestDiscovery]
-      val anyRefType = typeOf[AnyRef]
-
       val result = tree match {
         case q"$mods class $name[..$types] extends ..$parents { $self => ..$body }" =>
           val (autoTests, remainingBody) = findAutoTests(c)(body)
@@ -68,9 +65,13 @@ private object AutoTest {
       import c.universe._
 
       q"""
-      _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
-        ..$autoTests
-      ).parSequence.map(_root_.io.taig.testf.Test.and)
+      override final val auto: _root_.cats.effect.IO[_root_.io.taig.testf.Assertion[_root_.io.taig.testf.Pure]] = {
+        import _root_.cats.implicits._
+
+        _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
+          ..$autoTests
+        ).parSequence.map(_root_.io.taig.testf.Test.and)
+      }
       """
     }
 
