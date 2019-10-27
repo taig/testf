@@ -20,3 +20,6 @@ object AutoTestInheritedTest extends AutoTestApp {
 
   force("bar")(IO.pure(unit))
 }
+
+@AutoTest
+final class AutoTestClassTest extends AutoTestDiscovery

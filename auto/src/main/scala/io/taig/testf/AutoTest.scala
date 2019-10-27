@@ -15,41 +15,63 @@ private object AutoTest {
 
       val tree = annottees match {
         case head :: Nil => head.tree
-        case _           => c.abort(c.enclosingPosition, "Only objects allowed")
+        case _           => c.abort(c.enclosingPosition, "???")
       }
 
-      val appType = typeOf[AutoTestDiscovery]
+      val autoTestDiscoveryType = typeOf[AutoTestDiscovery]
       val anyRefType = typeOf[AnyRef]
 
       val result = tree match {
+        case q"$mods class $name[..$types] extends ..$parents { $self => ..$body }" =>
+          val (autoTests, remainingBody) = findAutoTests(c)(body)
+          q"""
+          $mods class $name[..$types] extends ..${adjustParents(c)(parents)} { $self =>
+            ..$remainingBody
+
+            ${auto(c)(autoTests)}
+          }
+          """
         case q"$mods object $name extends ..$parents { $self => ..$body }" =>
-          val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
-          val autoTestAppParent = typedParents.find(_.tpe <:< appType)
-          val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
-
-          val autoTestAppParents = autoTestAppParent.getOrElse(
-            tq"_root_.io.taig.testf.AutoTestDiscovery"
-          ) +: filteredParents
-
           val (autoTests, remainingBody) = findAutoTests(c)(body)
 
           q"""
-        $mods object $name extends ..$autoTestAppParents { $self =>
-          ..$remainingBody
+          $mods object $name extends ..${adjustParents(c)(parents)} { $self =>
+            ..$remainingBody
 
-          override final val auto: _root_.cats.effect.IO[_root_.io.taig.testf.Assertion[_root_.io.taig.testf.Pure]] = {
-            import _root_.cats.implicits._
-
-            _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
-              ..$autoTests
-            ).parSequence.map(_root_.io.taig.testf.Test.and)
+            ${auto(c)(autoTests)}
           }
-        }
-        """
+          """
         case _ => c.abort(c.enclosingPosition, "Only object allowed")
       }
 
       c.Expr(result)
+    }
+
+    def adjustParents(
+        c: blackbox.Context
+    )(parents: Seq[c.Tree]): Seq[c.Tree] = {
+      import c.universe._
+
+      val autoTestDiscoveryType = typeOf[AutoTestDiscovery]
+      val anyRefType = typeOf[AnyRef]
+      val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
+      val autoTestDiscoveryParent =
+        typedParents.find(_.tpe <:< autoTestDiscoveryType)
+      val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
+
+      autoTestDiscoveryParent.getOrElse(
+        tq"_root_.io.taig.testf.AutoTestDiscovery"
+      ) +: filteredParents
+    }
+
+    def auto(c: blackbox.Context)(autoTests: Seq[c.Tree]): c.Tree = {
+      import c.universe._
+
+      q"""
+      _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
+        ..$autoTests
+      ).parSequence.map(_root_.io.taig.testf.Test.and)
+      """
     }
 
     def findAutoTests(
