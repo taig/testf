@@ -10,7 +10,7 @@ trait AutoTestDiscovery {
 
   protected def blocker: Blocker = Contexts.blocker
 
-  def auto: IO[Assertion[Pure]] = {
+  protected def auto: IO[Assertion[Pure]] = {
     val message = "No auto tests were discovered. " +
       "Did you forget the @AutoTests annotation?"
 
