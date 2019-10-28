@@ -19,5 +19,8 @@ trait AutoTestDiscovery {
 
   def additional: IO[Assertion[Pure]] = IO.pure(Test.empty)
 
-  final def all: IO[Assertion[Pure]] = auto |+| additional
+  final def all: IO[Assertion[Pure]] = {
+    val name = getClass.getName.replace("$", "")
+    (auto |+| additional).map(Test.label(name, _))
+  }
 }
