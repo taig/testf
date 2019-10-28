@@ -1,11 +1,14 @@
 package io.taig.testf
 
-import cats.effect.{ContextShift, IO}
+import cats.implicits._
+import cats.effect.{Blocker, ContextShift, IO}
 import io.taig.testf.internal.Contexts
 
 trait AutoTestDiscovery {
   protected implicit def contextShit: ContextShift[IO] =
     Contexts.contextShift
+
+  protected def blocker: Blocker = Contexts.blocker
 
   def auto: IO[Assertion[Pure]] = {
     val message = "No auto tests were discovered. " +
@@ -13,4 +16,8 @@ trait AutoTestDiscovery {
 
     IO.raiseError(new IllegalStateException(message))
   }
+
+  def additional: IO[Assertion[Pure]] = IO.pure(Test.empty)
+
+  final def all: IO[Assertion[Pure]] = auto |+| additional
 }
