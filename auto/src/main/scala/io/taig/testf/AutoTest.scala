@@ -15,14 +15,17 @@ private object AutoTest {
 
       val tree = annottees match {
         case head :: Nil => head.tree
-        case _           => c.abort(c.enclosingPosition, "???")
+        case _ =>
+          c.abort(c.enclosingPosition, "@AutoTest can only be used once")
       }
 
       val result = tree match {
-        case q"$mods class $name[..$types] extends ..$parents { $self => ..$body }" =>
+        case q"$mods class $name[..$types] $ctorMods(...$paramss) extends ..$parents { $self => ..$body }" =>
           val (autoTests, remainingBody) = findAutoTests(c)(body)
           q"""
-          $mods class $name[..$types] extends ..${adjustParents(c)(parents)} { $self =>
+          $mods class $name[..$types] $ctorMods(...$paramss) extends ..${adjustParents(
+            c
+          )(parents)} { $self =>
             ..$remainingBody
 
             ${auto(c)(autoTests)}
@@ -38,7 +41,7 @@ private object AutoTest {
             ${auto(c)(autoTests)}
           }
           """
-        case _ => c.abort(c.enclosingPosition, "Only object allowed")
+        case _ => c.abort(c.enclosingPosition, "???")
       }
 
       c.Expr(result)

@@ -23,3 +23,7 @@ object AutoTestInheritedTest extends AutoTestApp {
 
 @AutoTest
 final class AutoTestClassTest extends AutoTestDiscovery
+
+@AutoTest
+final class AutoTestComplicatedClassTest[F[_], A](a: String)
+    extends AutoTestDiscovery
