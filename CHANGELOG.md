@@ -1,4 +1,15 @@
-# CHANGELOG
+# Changelog
+
+## 0.1.1
+
+_2019-10-28_
+
+ * Add `@AutoTest` support for classes
+ * Add more `Interpreter` instances
+ * Add test name to `AutoTestDiscovery#all`
+ * Make `AutoTestDiscovery#auto` `protected`
+ * Add `@AutoTest` support for complex class shapes
+ * Add possibility to add additional tests to `AutoTestDiscovery`
 
 ## 0.1.0
 
