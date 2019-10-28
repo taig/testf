@@ -13,10 +13,9 @@ private object AutoTest {
     def apply(annottees: c.Expr[Any]*): c.Expr[Any] = {
       import c.universe._
 
-      val tree = annottees match {
-        case head :: Nil => head.tree
-        case _ =>
-          c.abort(c.enclosingPosition, "@AutoTest can only be used once")
+      val (tree, tail) = annottees match {
+        case head :: tail => (head.tree, tail)
+        case _            => c.abort(c.enclosingPosition, "Invalid @AutoTest usage")
       }
 
       val result = tree match {
@@ -44,7 +43,13 @@ private object AutoTest {
         case _ => c.abort(c.enclosingPosition, "???")
       }
 
-      c.Expr(result)
+      c.Expr {
+        q"""
+        $result
+
+        ..$tail
+        """
+      }
     }
 
     def adjustParents(

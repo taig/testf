@@ -27,3 +27,5 @@ final class AutoTestClassTest extends AutoTestDiscovery
 @AutoTest
 final class AutoTestComplicatedClassTest[F[_], A](a: String)
     extends AutoTestDiscovery
+
+object AutoTestComplicatedClassTest
