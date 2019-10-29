@@ -96,6 +96,9 @@ object Test extends Builders {
         case test: Success[A] => f(test.value)
       }
 
+    def evalMap[B](f: A => F[B])(implicit F: Functor[F]): Test[F, B] =
+      flatMap(value => eval(f(value)))
+
     def assert(f: A => Assertion[F])(implicit F: Functor[F]): Assertion[F] =
       test.flatMap(f)
 
