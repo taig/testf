@@ -78,13 +78,13 @@ private object AutoTest {
           q"""
       {
         import _root_.cats.implicits._
-        _root_.io.taig.testf.Test.allOf[F, Unit](
+        _root_.io.taig.testf.Test.allOf[__F, Unit](
           ..${autoTests.map(tree => q"$tree.void")})
       }
       """
 
       q"""
-      override final val auto: _root_.io.taig.testf.Assertion[F] = $impl
+      override final val auto: _root_.io.taig.testf.Assertion[__F] = $impl
       """
     }
 

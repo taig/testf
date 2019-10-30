@@ -3,18 +3,18 @@ package io.taig.testf
 import cats.implicits._
 
 trait AbstractAutoTestDiscovery {
-  protected type F[α]
+  protected type __F[α]
 
-  protected def auto: Assertion[F] = Test.empty
+  protected def auto: Assertion[__F] = Test.empty
 
-  def additional: Assertion[F] = Test.empty
+  def additional: Assertion[__F] = Test.empty
 
-  final def all: Assertion[F] = {
+  final def all: Assertion[__F] = {
     val name = getClass.getName.replace("$", "")
     Test.test(name)(auto |+| additional)
   }
 }
 
 trait AutoTestDiscovery[G[_]] extends AbstractAutoTestDiscovery {
-  override final type F[α] = G[α]
+  override final type __F[α] = G[α]
 }
