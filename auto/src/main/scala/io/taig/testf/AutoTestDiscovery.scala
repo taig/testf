@@ -1,26 +1,20 @@
 package io.taig.testf
 
 import cats.implicits._
-import cats.effect.{Blocker, ContextShift, IO}
-import io.taig.testf.internal.Contexts
 
-trait AutoTestDiscovery {
-  protected implicit def contextShit: ContextShift[IO] =
-    Contexts.contextShift
+trait AbstractAutoTestDiscovery {
+  protected type F[α]
 
-  protected def blocker: Blocker = Contexts.blocker
+  protected def auto: Assertion[F] = Test.empty
 
-  protected def auto: IO[Assertion[Pure]] = {
-    val message = "No auto tests were discovered. " +
-      "Did you forget the @AutoTests annotation?"
+  def additional: Assertion[F] = Test.empty
 
-    IO.raiseError(new IllegalStateException(message))
-  }
-
-  def additional: IO[Assertion[Pure]] = IO.pure(Test.empty)
-
-  final def all: IO[Assertion[Pure]] = {
+  final def all: Assertion[F] = {
     val name = getClass.getName.replace("$", "")
-    (auto |+| additional).map(Test.label(name, _))
+    Test.test(name)(auto |+| additional)
   }
+}
+
+trait AutoTestDiscovery[G[_]] extends AbstractAutoTestDiscovery {
+  override final type F[α] = G[α]
 }

@@ -14,11 +14,11 @@ private object AutoTest {
       import c.universe._
 
       val (tree, tail) = annottees match {
-        case head :: tail => (head.tree, tail)
+        case head :: tail => (head.tree, tail.map(_.tree))
         case _            => c.abort(c.enclosingPosition, "Invalid @AutoTest usage")
       }
 
-      val result = tree match {
+      val result = c.typecheck(tree) match {
         case q"$mods class $name[..$types] $ctorMods(...$paramss) extends ..$parents { $self => ..$body }" =>
           val (autoTests, remainingBody) = findAutoTests(c)(body)
           q"""
@@ -57,41 +57,39 @@ private object AutoTest {
     )(parents: Seq[c.Tree]): Seq[c.Tree] = {
       import c.universe._
 
-      val autoTestDiscoveryType = typeOf[AutoTestDiscovery]
+      val autoTestDiscoveryType = typeOf[AbstractAutoTestDiscovery]
       val anyRefType = typeOf[AnyRef]
-      val typedParents = parents.map(tree => c.typecheck(q"??? : $tree"))
       val autoTestDiscoveryParent =
-        typedParents.find(_.tpe <:< autoTestDiscoveryType)
-      val filteredParents = typedParents.filterNot(_.tpe <:< anyRefType)
+        parents.find(_.tpe <:< autoTestDiscoveryType)
+      val filteredParents = parents.filterNot(_.tpe <:< anyRefType)
 
       autoTestDiscoveryParent.getOrElse(
-        tq"_root_.io.taig.testf.AutoTestDiscovery"
+        tq"_root_.io.taig.testf.AutoTestDiscovery[_root_.io.taig.testf.Pure]"
       ) +: filteredParents
     }
 
     def auto(c: blackbox.Context)(autoTests: Seq[c.Tree]): c.Tree = {
       import c.universe._
 
-      q"""
-      override final val auto: _root_.cats.effect.IO[_root_.io.taig.testf.Assertion[_root_.io.taig.testf.Pure]] = {
+      val impl =
+        if (autoTests.isEmpty)
+          q"""_root_.io.taig.testf.Test.empty"""
+        else
+          q"""
+      {
         import _root_.cats.implicits._
-
-        _root_.scala.List[_root_.cats.effect.IO[_root_.io.taig.testf.Test[_root_.io.taig.testf.Pure, _root_.scala.Unit]]](
-          ..$autoTests
-        ).parSequence.map(_root_.io.taig.testf.Test.and)
+        _root_.io.taig.testf.Test.allOf[F, Unit](
+          ..${autoTests.map(tree => q"$tree.void")})
       }
+      """
+
+      q"""
+      override final val auto: _root_.io.taig.testf.Assertion[F] = $impl
       """
     }
 
     def findAutoTests(
         c: blackbox.Context
-    )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = {
-      import c.universe._
-      val (tests, remainingBody) = body.partition(_.isTerm)
-      (
-        tests.map(tree => q"$tree.void.interpret[_root_.cats.effect.IO]"),
-        remainingBody
-      )
-    }
+    )(body: Seq[c.Tree]): (Seq[c.Tree], Seq[c.Tree]) = body.partition(_.isTerm)
   }
 }
