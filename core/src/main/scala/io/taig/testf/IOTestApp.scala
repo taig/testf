@@ -5,7 +5,7 @@ import io.taig.testf.internal.Contexts
 import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
 
 @EnableReflectiveInstantiation
-abstract class TestApp {
+abstract class IOTestApp {
   protected implicit def contextShit: ContextShift[IO] =
     Contexts.contextShift
 

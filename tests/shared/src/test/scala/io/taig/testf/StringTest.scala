@@ -5,7 +5,7 @@ import cats.implicits._
 import io.taig.testf.dsl._
 import org.scalacheck.Gen
 
-object StringTest extends TestApp {
+object StringTest extends IOTestApp {
   val start: Assertion[Pure] =
     test("startsWith") {
       check2(Gen.alphaNumStr, Gen.alphaNumStr) { (a, b) =>

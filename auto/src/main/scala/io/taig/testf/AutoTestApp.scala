@@ -3,7 +3,7 @@ package io.taig.testf
 import cats.effect.{Blocker, ContextShift, IO}
 import io.taig.testf.internal.Contexts
 
-abstract class AutoTestApp extends TestApp with AutoTestDiscovery {
+abstract class AutoTestApp extends IOTestApp with AutoTestDiscovery {
   override protected implicit def contextShit: ContextShift[IO] =
     Contexts.contextShift
 

@@ -48,6 +48,6 @@ object TestF {
 
     override val requireNoArgConstructor = true
 
-    override val superclassName = "io.taig.testf.TestApp"
+    override val superclassName = "io.taig.testf.IOTestApp"
   }
 }

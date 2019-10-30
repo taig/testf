@@ -4,7 +4,7 @@ import cats.effect.IO
 import hedgehog._
 import io.taig.testf.dsl._
 
-object HedgehogTest extends TestApp {
+object HedgehogTest extends IOTestApp {
   val reverse: Assertion[Pure] =
     test("reverse") {
       HedgehogAssertions.check(

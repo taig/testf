@@ -4,7 +4,7 @@ import io.taig.testf.dsl._
 import cats.implicits._
 import cats.effect.IO
 
-object AdditionTest extends TestApp {
+object AdditionTest extends IOTestApp {
   val onePlusOne: Assertion[Pure] =
     test("1 + 1 == 2")(isEqual(2)(1 + 1))
 

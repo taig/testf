@@ -5,7 +5,7 @@ import cats.implicits._
 import cats.laws.discipline.MonadTests
 import io.taig.testf.dsl._
 
-object OptionTest extends TestApp {
+object OptionTest extends IOTestApp {
   val monadLaws: Assertion[Pure] =
     verify(
       "MonadLaws",
