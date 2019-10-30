@@ -1,11 +1,10 @@
 package io.taig.testf
 
-import cats.effect.IO
-import cats.implicits._
+import cats.effect.{ConcurrentEffect, ContextShift, IO}
 import io.taig.testf.dsl._
 
 @AutoTest
-object AutoTestPlainTest {
+object AutoTestPlainTest extends AutoTestDiscovery[Pure] {
   test("foo")(pure(42))
 
   test("bar")(isEqual(1)(1))
@@ -37,3 +36,12 @@ final class AutoTestComplicatedClassTest[F[_], A](a: String)
     extends AutoTestDiscovery[F]
 
 object AutoTestComplicatedClassTest
+
+@AutoTest
+final class AutoTestImplicitsTest[F[_]: ConcurrentEffect: ContextShift]
+    extends AutoTestDiscovery[F]
+
+object AutoTestImplicitsTest {
+  def apply[F[_]: ConcurrentEffect: ContextShift]: AutoTestImplicitsTest[F] =
+    new AutoTestImplicitsTest[F]()
+}

@@ -7,7 +7,7 @@ trait AbstractAutoTestDiscovery {
 
   protected def auto: Assertion[__F] = Test.empty
 
-  def additional: Assertion[__F] = Test.empty
+  protected def additional: Assertion[__F] = Test.empty
 
   final def all: Assertion[__F] = {
     val name = getClass.getName.replace("$", "")

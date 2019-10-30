@@ -18,13 +18,11 @@ private object AutoTest {
         case _            => c.abort(c.enclosingPosition, "Invalid @AutoTest usage")
       }
 
-      val result = c.typecheck(tree) match {
+      val result = tree match {
         case q"$mods class $name[..$types] $ctorMods(...$paramss) extends ..$parents { $self => ..$body }" =>
           val (autoTests, remainingBody) = findAutoTests(c)(body)
           q"""
-          $mods class $name[..$types] $ctorMods(...$paramss) extends ..${adjustParents(
-            c
-          )(parents)} { $self =>
+          $mods class $name[..$types] $ctorMods(...$paramss) extends ..$parents { $self =>
             ..$remainingBody
 
             ${auto(c)(autoTests)}
@@ -34,7 +32,7 @@ private object AutoTest {
           val (autoTests, remainingBody) = findAutoTests(c)(body)
 
           q"""
-          $mods object $name extends ..${adjustParents(c)(parents)} { $self =>
+          $mods object $name extends ..$parents { $self =>
             ..$remainingBody
 
             ${auto(c)(autoTests)}
@@ -50,22 +48,6 @@ private object AutoTest {
         ..$tail
         """
       }
-    }
-
-    def adjustParents(
-        c: blackbox.Context
-    )(parents: Seq[c.Tree]): Seq[c.Tree] = {
-      import c.universe._
-
-      val autoTestDiscoveryType = typeOf[AbstractAutoTestDiscovery]
-      val anyRefType = typeOf[AnyRef]
-      val autoTestDiscoveryParent =
-        parents.find(_.tpe <:< autoTestDiscoveryType)
-      val filteredParents = parents.filterNot(_.tpe <:< anyRefType)
-
-      autoTestDiscoveryParent.getOrElse(
-        tq"_root_.io.taig.testf.AutoTestDiscovery[_root_.io.taig.testf.Pure]"
-      ) +: filteredParents
     }
 
     def auto(c: blackbox.Context)(autoTests: Seq[c.Tree]): c.Tree = {
