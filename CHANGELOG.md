@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+_2019-11-06_
+
+* `@AutoTest` now requires to extend from a `Discovery` trait
+* Don't interpret auto discovered tests and instead abstract over F
+* Add `Timer[IO]` instance to `IOTestApp`
+* Rename `TestApp` to `IOTestApp`
+* Add `Test.evalMap`
+
 ## 0.1.1
 
 _2019-10-28_
