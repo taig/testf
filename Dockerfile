@@ -1,4 +1,4 @@
-FROM        openjdk:8u191-jdk-alpine3.9
+FROM        openjdk:8u212-jdk-alpine3.9
 
 RUN         apk upgrade --update
 RUN         apk add --no-cache bash build-base git nodejs
