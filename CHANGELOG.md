@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.3
+
+_2020-03-26_
+
+ * Upgrade to sbt-scalajs 1.0.1
+ * Upgrade to sbt-houserules 0.1.10
+ * Upgrade to sbt 1.3.8
+ * Upgrade to cats 2.1.1
+ * Upgrade to cats-effect 2.1.2
+ * Upgrade to scalacheck 1.14.3
+ * Upgrade to scala 2.13.1
+ * Upgrade to scala 2.12.11
+ * Upgrade docker image to openjdk:8u212-jdk-alpine3.9
+ * Add silencer to suppress warnings
+
 ## 0.1.2
 
 _2019-11-06_
