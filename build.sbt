@@ -5,7 +5,7 @@ val catsEffectVersion = "2.0.0"
 val hedgehogVersion = "0.1.0"
 val portableScalaReflectVersion = "0.1.0"
 val scalajsTestInterfaceVersion = "0.6.29"
-val scalacheckVersion = "1.14.2"
+val scalacheckVersion = "1.14.3"
 val testInterfaceVersion = "1.0"
 
 lazy val testf = project
