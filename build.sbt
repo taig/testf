@@ -3,7 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val catsVersion = "2.1.1"
 val catsEffectVersion = "2.1.2"
 val hedgehogVersion = "0.1.0"
-val portableScalaReflectVersion = "0.1.0"
+val portableScalaReflectVersion = "1.0.0"
 val scalajsTestInterfaceVersion = "0.6.29"
 val scalacheckVersion = "1.14.3"
 val silencerVersion = "1.6.0"
