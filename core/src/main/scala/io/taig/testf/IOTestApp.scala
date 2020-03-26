@@ -6,10 +6,10 @@ import org.portablescala.reflect.annotation.EnableReflectiveInstantiation
 
 @EnableReflectiveInstantiation
 abstract class IOTestApp {
-  protected implicit def contextShift: ContextShift[IO] =
+  implicit protected def contextShift: ContextShift[IO] =
     Contexts.contextShift
 
-  protected implicit def timer: Timer[IO] = Contexts.timer
+  implicit protected def timer: Timer[IO] = Contexts.timer
 
   protected def blocker: Blocker = Contexts.blocker
 

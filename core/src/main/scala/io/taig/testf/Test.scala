@@ -30,7 +30,7 @@ object Test extends Builders {
 
   final case class Success[A](value: A) extends Test[Pure, A]
 
-  final implicit class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
+  implicit final class TestOps[F[_], A](val test: Test[F, A]) extends AnyVal {
     def interpret[G[_]](
         implicit interpreter: Interpreter[F, G]
     ): G[Test[Pure, A]] =

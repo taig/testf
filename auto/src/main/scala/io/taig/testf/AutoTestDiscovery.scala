@@ -16,5 +16,5 @@ trait AbstractAutoTestDiscovery {
 }
 
 trait AutoTestDiscovery[G[_]] extends AbstractAutoTestDiscovery {
-  override final type __F[α] = G[α]
+  final override type __F[α] = G[α]
 }
