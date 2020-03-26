@@ -6,7 +6,15 @@ val hedgehogVersion = "0.1.0"
 val portableScalaReflectVersion = "0.1.0"
 val scalajsTestInterfaceVersion = "0.6.29"
 val scalacheckVersion = "1.14.3"
+val silencerVersion = "1.6.0"
 val testInterfaceVersion = "1.0"
+
+Global / libraryDependencies ++=
+  compilerPlugin(
+    "com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full
+  ) ::
+    ("com.github.ghik" % "silencer-lib" % silencerVersion % "provided" cross CrossVersion.full) ::
+    Nil
 
 lazy val testf = project
   .in(file("."))
@@ -42,8 +50,6 @@ lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
   .in(file("runner-sbt"))
   .settings(sonatypePublishSettings)
   .settings(
-    libraryDependencies ++=
-      Nil,
     name := "Runner Sbt"
   )
   .jvmSettings(

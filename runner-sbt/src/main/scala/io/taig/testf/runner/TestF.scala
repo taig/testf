@@ -2,6 +2,7 @@ package io.taig.testf.runner
 
 import cats.effect.concurrent.MVar
 import cats.effect.{ConcurrentEffect, ContextShift, IO}
+import com.github.ghik.silencer.silent
 import sbt.testing._
 
 import scala.concurrent.ExecutionContext
@@ -9,8 +10,7 @@ import scala.concurrent.ExecutionContext
 final class TestF extends Framework {
   override val name: String = "TestF"
 
-  override val fingerprints: Array[Fingerprint] =
-    Array(TestF.ModuleFingerprint)
+  override val fingerprints: Array[Fingerprint] = Array(TestF.ModuleFingerprint)
 
   override def runner(
       args: Array[String],
@@ -25,6 +25,7 @@ final class TestF extends Framework {
       TestF.contextShift
     )
 
+  @silent
   def slaveRunner(
       args: Array[String],
       remoteArgs: Array[String],

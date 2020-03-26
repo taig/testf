@@ -2,6 +2,7 @@ package io.taig.testf.runner
 
 import cats.effect.concurrent.MVar
 import cats.effect.{ContextShift, IO}
+import com.github.ghik.silencer.silent
 import sbt.testing._
 
 final case class TestFRunner(
@@ -16,6 +17,7 @@ final case class TestFRunner(
   override def tasks(list: Array[TaskDef]): Array[Task] =
     list.map(task => new TestFTask(task, classLoader, lock))
 
+  @silent
   def receiveMessage(msg: String): Option[String] = None
 
   def serializeTask(task: Task, serializer: TaskDef => String): String =
@@ -23,5 +25,4 @@ final case class TestFRunner(
 
   def deserializeTask(task: String, deserializer: String => TaskDef): Task =
     new TestFTask(deserializer(task), classLoader, lock)
-
 }

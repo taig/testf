@@ -1,6 +1,7 @@
 package io.taig.testf
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO}
+import com.github.ghik.silencer.silent
 import io.taig.testf.dsl._
 
 @AutoTest
@@ -31,6 +32,7 @@ object AutoTestInheritedTest extends AutoTestDiscovery[IO] {
 @AutoTest
 final class AutoTestClassTest extends AutoTestDiscovery[IO]
 
+@silent
 @AutoTest
 final class AutoTestComplicatedClassTest[F[_], A](a: String)
     extends AutoTestDiscovery[F]

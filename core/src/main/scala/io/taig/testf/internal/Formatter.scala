@@ -29,10 +29,10 @@ object Formatter {
     case Test.Label(description, Test.Skip(_)) => skip(description, color).some
     case Test.Label(description, Test.Success(_)) =>
       success(description, color).some
-    case Test.Label(description, test)   => label(color, level)(description, test)
-    case Test.Message(description, test) => "message".some
-    case Test.Not(test)                  => "NOT".some
-    case Test.Or(tests)                  => both(color, level)(tests)
+    case Test.Label(description, test) => label(color, level)(description, test)
+    case Test.Message(_, _)            => "message".some
+    case Test.Not(_)                   => "NOT".some
+    case Test.Or(tests)                => both(color, level)(tests)
     case Test.Skip(test) =>
       skip(Tests.label(test).getOrElse(unlabeled), color).some
     case Test.Success(_) =>
