@@ -29,7 +29,7 @@ RUN         cd ./cache/ && sbt -v compile
 ADD         ./project ./cache/project/
 ADD         ./build.sbt ./cache/
 RUN         echo "class Test" > ./cache/src/test/scala/Test.scala
-RUN         cd ./cache/ && sbt -v "set every sourceGenerators := List()" coverage +test coverageReport
+RUN         cd ./cache/ && sbt -v "set every sourceGenerators := List()" coverage +testsJVM/test coverageReport
 
 # Clean cache
 RUN         rm -r ./cache/
