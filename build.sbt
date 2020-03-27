@@ -18,7 +18,8 @@ Global / libraryDependencies ++=
 
 val coverageSettings = Def.settings(
   coverageEnabled := {
-    if(crossProjectPlatform.value == JSPlatform) false else coverageEnabled.value
+    if (crossProjectPlatform.value == JSPlatform) false
+    else coverageEnabled.value
   }
 )
 
