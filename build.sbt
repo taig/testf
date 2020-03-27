@@ -16,6 +16,12 @@ Global / libraryDependencies ++=
     ("com.github.ghik" % "silencer-lib" % SilencerVersion % "provided" cross CrossVersion.full) ::
     Nil
 
+val coverageSettings = Def.settings(
+  coverageEnabled := {
+    if(crossProjectPlatform.value == JSPlatform) false else coverageEnabled.value
+  }
+)
+
 lazy val testf = project
   .in(file("."))
   .settings(noPublishSettings)
@@ -37,7 +43,7 @@ lazy val testf = project
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings)
+  .settings(sonatypePublishSettings ++ coverageSettings)
   .settings(
     libraryDependencies ++=
       "org.typelevel" %%% "cats-effect" % CatsEffectVersion ::
@@ -48,7 +54,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("runner-sbt"))
-  .settings(sonatypePublishSettings)
+  .settings(sonatypePublishSettings ++ coverageSettings)
   .settings(
     name := "Runner Sbt"
   )
@@ -66,7 +72,7 @@ lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
 
 lazy val auto = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings)
+  .settings(sonatypePublishSettings ++ coverageSettings)
   .jsSettings(
     libraryDependencies ++=
       "org.scala-lang" % "scala-reflect" % scalaVersion.value ::
@@ -76,7 +82,7 @@ lazy val auto = crossProject(JVMPlatform, JSPlatform)
 
 lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings)
+  .settings(sonatypePublishSettings ++ coverageSettings)
   .settings(
     libraryDependencies ++=
       "org.scalacheck" %%% "scalacheck" % ScalacheckVersion ::
@@ -93,7 +99,7 @@ lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
 
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings)
+  .settings(sonatypePublishSettings ++ coverageSettings)
   .settings(
     libraryDependencies ++=
       "org.typelevel" %%% "cats-laws" % CatsVersion ::
