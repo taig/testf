@@ -34,14 +34,12 @@ final class AutoTestClassTest extends AutoTestDiscovery[IO]
 
 @silent
 @AutoTest
-final class AutoTestComplicatedClassTest[F[_], A](a: String)
-    extends AutoTestDiscovery[F]
+final class AutoTestComplicatedClassTest[F[_], A](a: String) extends AutoTestDiscovery[F]
 
 object AutoTestComplicatedClassTest
 
 @AutoTest
-final class AutoTestImplicitsTest[F[_]: ConcurrentEffect: ContextShift]
-    extends AutoTestDiscovery[F]
+final class AutoTestImplicitsTest[F[_]: ConcurrentEffect: ContextShift] extends AutoTestDiscovery[F]
 
 object AutoTestImplicitsTest {
   def apply[F[_]: ConcurrentEffect: ContextShift]: AutoTestImplicitsTest[F] =

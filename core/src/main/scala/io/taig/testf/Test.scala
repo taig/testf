@@ -16,11 +16,9 @@ object Test extends Builders {
 
   final case class Failure(throwable: Throwable) extends Test[Pure, Nothing]
 
-  final case class Label[F[_], A](description: String, test: Test[F, A])
-      extends Test[F, A]
+  final case class Label[F[_], A](description: String, test: Test[F, A]) extends Test[F, A]
 
-  final case class Message[F[_], A](description: String, test: Test[F, A])
-      extends Test[F, A]
+  final case class Message[F[_], A](description: String, test: Test[F, A]) extends Test[F, A]
 
   final case class Not[F[_], A](test: Test[F, A]) extends Test[F, A]
 
