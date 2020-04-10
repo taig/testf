@@ -2,8 +2,10 @@ package io.taig.testf
 
 import java.net.{HttpURLConnection, URL}
 
+import scala.concurrent.ExecutionContext
+
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import io.taig.testf.dsl._
 
 object WebsiteStatusTest extends IOTestApp {
@@ -28,6 +30,8 @@ object WebsiteStatusTest extends IOTestApp {
     "https://github.com/"
   )
 
-  override val suite: IO[Assertion[Pure]] =
+  override val suite: IO[Assertion[Pure]] = {
+    implicit val shift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     testAll("WebsiteStatusTest")(urls.map(is200)).interpret
+  }
 }
