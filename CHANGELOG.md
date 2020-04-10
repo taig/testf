@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+_2020-04-10_
+
+ * Remove predefined implicit context shift and timer in auto app
+ * Upgrade to sbt-houserules 0.2.2
+ * Upgrade to sbt 1.3.9
+ 
 ## 0.1.4
 
 _2020-03-27_
