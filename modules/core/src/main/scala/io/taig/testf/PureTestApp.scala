@@ -7,5 +7,5 @@ trait PureTestApp extends TestApp:
 
   override def main(logger: String => Unit, callback: Option[Report] => Unit): Unit =
     val report = runner.run(suite)
-    logger(Formatter(report))
+    logger(Formatter(report, colors = true))
     callback(Some(report))

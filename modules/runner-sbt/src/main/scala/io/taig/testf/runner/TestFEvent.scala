@@ -14,7 +14,9 @@ final class TestFEvent(task: TaskDef, report: Report) extends Event:
 
   override def status(): Status = TestFEvent.status(report)
 
-  override def throwable(): OptionalThrowable = report.failure.fold(new OptionalThrowable())(new OptionalThrowable(_))
+  override def throwable(): OptionalThrowable = report.summary match
+    case Result.Failure(throwable) => new OptionalThrowable(throwable)
+    case _                         => new OptionalThrowable()
 
   override def duration(): Long = -1
 

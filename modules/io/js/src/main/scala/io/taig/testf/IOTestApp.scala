@@ -18,7 +18,7 @@ trait IOTestApp extends TestApp {
     lazy val keepAlive: IO[Nothing] =
       IO.sleep(1.hour) >> keepAlive
 
-    val run = suite.flatMap(runner.run).flatTap(report => IO(logger(Formatter(report))))
+    val run = suite.flatMap(runner.run).flatTap(report => IO(logger(Formatter(report, colors = true))))
 
     Spawn[IO]
       .raceOutcome(run, keepAlive)

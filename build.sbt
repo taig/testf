@@ -1,7 +1,6 @@
 val Version = new {
-  val CatsEffect = "3.2.9"
   val Fs2 = "3.2.2"
-  val PortableScalaReflect = "1.0.0"
+  val PortableScalaReflect = "1.1.1"
   val Scala = "3.1.0"
   val ScalajsTestInterface = "1.7.1"
   val TestInterface = "1.0"
@@ -15,8 +14,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "testf-name",
     libraryDependencies ++=
-        ("org.portable-scala" %%% "portable-scala-reflect" % Version.PortableScalaReflect)
-          .cross(CrossVersion.for3Use2_13) ::
+      ("org.portable-scala" %%% "portable-scala-reflect" % Version.PortableScalaReflect)
+        .cross(CrossVersion.for3Use2_13) ::
         Nil
   )
 

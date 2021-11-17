@@ -17,10 +17,10 @@ trait IOTestApp extends TestApp:
   override def main(logger: String => Unit, callback: Option[Report] => Unit): Unit =
     suite
       .flatMap(runner.run)
-      .flatTap(report => IO(logger(Formatter(report))))
+      .flatTap(report => IO(logger(Formatter(report, colors = true))))
       .guaranteeCase {
-        case Outcome.Succeeded(report)  => report.flatMap(report => IO(callback(Some(report))))
-        case Outcome.Errored(throwable) => IO(callback(None))
-        case Outcome.Canceled()         => IO(callback(None))
+        case Outcome.Succeeded(report) => report.flatMap(report => IO(callback(Some(report))))
+        case Outcome.Errored(_)        => IO(callback(None))
+        case Outcome.Canceled()        => IO(callback(None))
       }
       .unsafeRunSync()(runtime)

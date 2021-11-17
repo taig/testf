@@ -5,16 +5,17 @@ enum Report:
   case Label(name: String, report: Report)
   case Group(reports: List[Report])
 
-  def isSuccess: Boolean = this match
-    case Assertion(result) => result.isSuccess
-    case Label(_, report)  => report.isSuccess
-    case Group(reports)    => reports.forall(_.isSuccess)
-
-  def failure: Option[Throwable] = this match
-    case Assertion(result) => result.failure
-    case Label(_, report)  => report.failure
-    case Group(reports)    =>
-      reports.foldLeft[Option[Throwable]](None) {
-        case (None, report) => report.failure
-        case (throwable @ Some(_), _) => throwable
+  def summary: Result = this match
+    case Assertion(result) => result
+    case Label(_, report)  => report.summary
+    case Group(reports) =>
+      reports.map(_.summary).foldLeft(Result.Success) {
+        case (Result.Success, Result.Success)                                 => Result.Success
+        case (Result.Success, result @ (Result.Error(_) | Result.Failure(_))) => result
+        case (result @ (Result.Error(_) | Result.Failure(_)), Result.Success | Result.Skipped | Result.Error(_)) =>
+          result
+        case (Result.Error(_), result @ Result.Failure(_))                     => result
+        case (result @ Result.Failure(_), Result.Failure(_) | Result.Error(_)) => result
+        case (Result.Skipped, result)                                          => result
+        case (result, Result.Skipped)                                          => result
       }
