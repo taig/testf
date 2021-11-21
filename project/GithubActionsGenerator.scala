@@ -1,3 +1,6 @@
+import io.circe.Json
+import io.circe.syntax._
+
 object GithubActionsGenerator {
   object Action {
     val Checkout = "actions/checkout@v2.4.0"
@@ -5,81 +8,109 @@ object GithubActionsGenerator {
     val SetupJava = "actions/setup-java@v2.3.1"
   }
 
-  object Job {
-    val Lint: String =
-      s"""  lint:
-         |    name: ⚠️ Fatal warnings and code formatting
-         |    runs-on: ubuntu-latest
-         |    steps:
-         |      - name: Setup Java JDK
-         |        uses: ${Action.SetupJava}
-         |      - name: Checkout
-         |        uses: ${Action.Checkout}
-         |      - name: Cache
-         |        uses: ${Action.CoursierCache}
-         |      - name: Workflows
-         |        run: sbt githubWorkflowsCheck
-         |      - name: Code formatting
-         |        run: sbt scalafmtCheckAll
-         |      - name: Fatal warnings
-         |        run: sbt -Dmode=strict +Test/compile""".stripMargin
+  object Step {
+    val SetupJava = Json.obj(
+      "name" := "Setup Java JDK",
+      "uses" := Action.SetupJava,
+      "with" := Json.obj(
+        "distribution" := "temurin",
+        "java-version" := "11"
+      )
+    )
 
-    val Test: String =
-      s"""  test:
-         |    name: ✅ Unit & integration tests
-         |    runs-on: ubuntu-latest
-         |    steps:
-         |      - name: Setup Java JDK
-         |        uses: ${Action.SetupJava}
-         |      - name: Checkout
-         |        uses: ${Action.Checkout}
-         |      - name: Cache
-         |        uses: ${Action.CoursierCache}
-         |      - name: Tests
-         |        run: sbt +test""".stripMargin
+    val Checkout = Json.obj(
+      "name" := "Checkout",
+      "uses" := Action.Checkout
+    )
+
+    val Cache = Json.obj(
+      "name" := "Cache",
+      "uses" := Action.CoursierCache
+    )
   }
 
-  val main: String =
-    s"""name: CI & CD
-       |
-       |on:
-       |  push:
-       |    branches:
-       |      - 'main'
-       |    tags:
-       |      - '*.*.*'
-       |
-       |jobs:
-       |${Job.Test}
-       |${Job.Lint}
-       |  deploy:
-       |    name: 🚀 Deploy
-       |    needs: [ test, lint ]
-       |    runs-on: ubuntu-latest
-       |    steps:
-       |      - name: Setup Java JDK
-       |        uses: ${Action.SetupJava}
-       |      - name: Checkout
-       |        uses: ${Action.Checkout}
-       |      - name: Cache
-       |        uses: ${Action.CoursierCache}
-       |      - name: Release
-       |        run: sbt ci-release
-       |        env:
-       |          PGP_PASSPHRASE: $${{secrets.PGP_PASSPHRASE}}
-       |          PGP_SECRET: $${{secrets.PGP_SECRET}}
-       |          SONATYPE_PASSWORD: $${{secrets.SONATYPE_PASSWORD}}
-       |          SONATYPE_USERNAME: $${{secrets.SONATYPE_USERNAME}}""".stripMargin
+  object Job {
+    val Lint: Json = Json.obj(
+      "name" := "⚠️ Fatal warnings and code formatting",
+      "runs-on" := "ubuntu-latest",
+      "steps" := List(
+        Step.SetupJava,
+        Step.Checkout,
+        Step.Cache,
+        Json.obj(
+          "name" := "Workflows",
+          "run" := "sbt blowoutCheck"
+        ),
+        Json.obj(
+          "name" := "Code formatting",
+          "run" := "sbt scalafmtCheckAll"
+        ),
+        Json.obj(
+          "name" := "Fatal warnings",
+          "run" := "sbt -Dmode=strict +Test/compile"
+        )
+      )
+    )
 
-  val branches: String =
-    s"""name: CI
-       |
-       |on:
-       |  pull_request:
-       |    branches:
-       |      - 'main'
-       |
-       |jobs:
-       |${Job.Test}
-       |${Job.Lint}""".stripMargin
+    val Test: Json = Json.obj(
+      "name" := "✅ Unit & integration tests",
+      "runs-on" := "ubuntu-latest",
+      "steps" := List(
+        Step.SetupJava,
+        Step.Checkout,
+        Step.Cache,
+        Json.obj(
+          "name" := "Tests",
+          "run" := "sbt +test"
+        )
+      )
+    )
+  }
+
+  val main: Json = Json.obj(
+    "name" := "CI & CD",
+    "on" := Json.obj(
+      "push" := Json.obj(
+        "branches" := List("main"),
+        "tags" := List("*.*.*")
+      )
+    ),
+    "jobs" := Json.obj(
+      "lint" := Job.Lint,
+      "test" := Job.Test,
+      "deploy" := Json.obj(
+        "name" := "🚀 Deploy",
+        "runs-on" := "ubuntu-latest",
+        "needs" := List("test", "lint"),
+        "steps" := List(
+          Step.SetupJava,
+          Step.Checkout,
+          Step.Cache,
+          Json.obj(
+            "name" := "Release",
+            "run" := "sbt ci-release",
+            "env" := Json.obj(
+              "PGP_PASSPHRASE" := "${{secrets.PGP_PASSPHRASE}}",
+              "PGP_SECRET" := "${{secrets.PGP_SECRET}}",
+              "SONATYPE_PASSWORD" := "${{secrets.SONATYPE_PASSWORD}}",
+              "SONATYPE_USERNAME" := "${{secrets.SONATYPE_USERNAME}}"
+            )
+          )
+        )
+      )
+    )
+  )
+
+  def branches: Json = Json.obj(
+    "name" := "CI",
+    "on" := Json.obj(
+      "pull_request" := Json.obj(
+        "branches" := Json.arr("main".asJson)
+      )
+    ),
+    "jobs" := Json.obj(
+      "lint" := Job.Lint,
+      "test" := Job.Test
+    )
+  )
 }
