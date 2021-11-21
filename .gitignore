@@ -1,3 +1,4 @@
+.github/
 .bsp/
 target/
 .scalafmt.conf

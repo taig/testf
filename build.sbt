@@ -8,6 +8,29 @@ val Version = new {
 
 ThisBuild / scalaVersion := Version.Scala
 
+val githubWorkflowsGenerate = taskKey[List[File]]("Generate GitHub Actions workflows")
+val githubWorkflowsCheck = taskKey[Unit](
+  "Checks to see if the current workflow files are equivalent to what would be generated and errors otherwise"
+)
+
+Global / githubWorkflowsGenerate := {
+  val workflows = (LocalRootProject / baseDirectory).value / ".github" / "workflows"
+  val main = workflows / "main.yml"
+  val branches = workflows / "branches.yml"
+  IO.write(main, GithubActionsGenerator.main)
+  IO.write(branches, GithubActionsGenerator.branches)
+  List(main, branches)
+}
+
+Global / githubWorkflowsCheck := {
+  val workflows = (LocalRootProject / baseDirectory).value / ".github" / "workflows"
+  val main = workflows / "main.yml"
+  val branches = workflows / "branches.yml"
+  List((main, GithubActionsGenerator.main), (branches, GithubActionsGenerator.branches)).foreach { case (file, yml) =>
+    if (IO.read(file) != yml) sys.error(s"$file is not up to date, try running githubWorkflowsGenerate")
+  }
+}
+
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/core"))
