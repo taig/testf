@@ -16,11 +16,10 @@ object dsl:
   def failure(name: String, throwable: Throwable): Test[Pure] = result(name, Result.Failure(throwable))
 
   object group:
-    def apply[F[_]](name: String, concurrency: Int)(tests: Test[F]*): Test[F] =
+    def apply[F[_]](name: String, concurrency: Int = Int.MaxValue)(tests: Test[F]*): Test[F] =
       label(name)(Test.Group(tests.toList, concurrency))
 
     def sequential[F[_]](name: String)(tests: Test[F]*): Test[F] =
       apply(name, concurrency = 1)(tests: _*)
 
-    def parallel[F[_]](name: String)(tests: Test[F]*): Test[F] =
-      apply(name, concurrency = Int.MaxValue)(tests: _*)
+    def combine[F[_]](tests: Test[F]*): Test[F] = Test.Group(tests.toList, concurrency = Int.MaxValue)

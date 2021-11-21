@@ -5,7 +5,7 @@ import io.taig.testf.dsl.*
 
 object IOTest extends IOTestApp:
   override val suite: IO[Test[IO]] = IO {
-    group.parallel("fuck you")(
+    group("IO calculations")(
       testF("1 + 1") {
         IO(Assertion.equals(obtained = 1 + 1, expected = 2))
       }

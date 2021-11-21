@@ -2,12 +2,9 @@ package io.taig.testf
 
 import io.taig.testf.Formatter.{Error, Failure, Skipped, Success}
 
-object Formatter:
-  def apply(report: Report, colors: Boolean): String =
-    val builder = new StringBuilder
-    apply(report, indent = "", builder, colors)
-    builder.result()
+import java.io.{PrintWriter, StringWriter}
 
+object Formatter:
   private val Success = "✓"
   private val Skipped = "☐"
   private val Error = "✗"
@@ -16,47 +13,61 @@ object Formatter:
   private val Linebreak = "\n"
   private val Space = " "
 
-  private object Ansi {
-    val Reset = "\u001B[0m"
-    val Red = "\u001B[31m"
-    val Green = "\u001B[32m"
-    val Yellow = "\u001B[33m"
-  }
+  opaque type Ansi = String
 
-  private def apply(report: Report, indent: String, builder: StringBuilder, colors: Boolean): Unit = report match
+  object Ansi:
+    val Reset: Ansi = Console.RESET
+    val Red: Ansi = Console.RED
+    val Green: Ansi = Console.GREEN
+    val Yellow: Ansi = Console.YELLOW
+
+  extension (ansi: Ansi) def value: String = ansi
+
+  def apply(report: Report, colors: Boolean): String = Formatter(report, indent = "", colors)
+
+  private def apply(report: Report, indent: String, colors: Boolean): String = report match
     case Report.Label(name, Report.Assertion(result)) =>
-      colored(builder, color(result), colors) { builder =>
-        builder
-          .append(indent)
-          .append(sign(result))
-          .append(Space)
-          .append(name)
-          .append(Linebreak)
-      }
+      maybeColorizeLines(indent + sign(result) + Space + name, color(result), colors) +
+        result.failure
+          .map { throwable =>
+            maybeColorizeLines(Colon, Ansi.Red, colors) + Linebreak +
+              padLeft(maybeColorizeLines(Formatter.stacktrace(throwable), Ansi.Red, colors), indent + "  ")
+          }
+          .getOrElse("")
     case Report.Label(name, report @ Report.Group(reports)) =>
-      colored(builder, color(report.summary), colors) { builder =>
-        builder
-          .append(indent)
-          .append(color(report.summary))
-          .append(name)
-          .append(Colon)
-          .append(Ansi.Reset)
-          .append(Linebreak)
-      }
-
-      reports.foreach(apply(_, indent + "  ", builder, colors))
+      maybeColorizeLines(indent + name + Colon, color(report.summary), colors) +
+        reports.map(report => Formatter(report, indent + "  ", colors)).mkString(Linebreak, Linebreak, "")
     case Report.Label(outer, Report.Label(inner, report)) =>
-      apply(Report.Label(s"$outer.$inner", report), indent, builder, colors)
-    case Report.Assertion(_) =>
-      builder.append(indent).append(Success).append("<unknown>").append(Linebreak)
-    case Report.Group(reports) => reports.foreach(apply(_, indent, builder, colors))
+      apply(Report.Label(s"$outer.$inner", report), indent, colors)
+    case Report.Assertion(_)   => indent + Success + "<unknown>"
+    case Report.Group(reports) => reports.map(Formatter(_, indent, colors)).mkString
 
-  private def colored(builder: StringBuilder, color: String, enabled: Boolean)(
-      f: StringBuilder => StringBuilder
-  ): StringBuilder =
-    if (enabled) f(builder.append(color)).append(Ansi.Reset) else f(builder)
+  private def maybeColorizeLines(text: String, color: Ansi, enabled: Boolean): String =
+    if (enabled) colorizeLines(text, color) else text
 
-  private val color: Result => String =
+  private def colorizeLines(text: String, color: Ansi): String =
+    text
+      .split('\n')
+      .map(colorize(_, color))
+      .mkString("\n")
+
+  private def colorize(text: String, color: Ansi): String =
+    color.value + text + Ansi.Reset.value
+
+  private def stacktrace(throwable: Throwable): String =
+    val writer = new StringWriter
+    throwable.printStackTrace(new PrintWriter(writer))
+    writer.toString
+
+  private def padLeft(value: String, indent: String): String =
+    if (indent == "") value
+    else
+      value
+        .split("\n")
+        .map(value => indent + value)
+        .mkString("\n")
+
+  private val color: Result => Ansi =
     case Result.Success    => Ansi.Green
     case Result.Skipped    => Ansi.Yellow
     case Result.Error(_)   => Ansi.Red
