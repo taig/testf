@@ -1,6 +1,6 @@
 addSbtPlugin("io.taig" % "sbt-houserules" % "0.3.15")
 
-addSbtPlugin("io.taig" % "sbt-blowout-yaml" % "0.0.1")
+addSbtPlugin("io.taig" % "sbt-blowout-yaml" % "0.0.5")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.1.0")
 
