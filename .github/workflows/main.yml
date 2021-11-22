@@ -1,0 +1,65 @@
+name: CI & CD
+'on':
+  push:
+    branches:
+    - main
+    tags:
+    - '*.*.*'
+jobs:
+  lint:
+    name: ⚠️ Fatal warnings and code formatting
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Java JDK
+      uses: actions/setup-java@v2.3.1
+      with:
+        distribution: temurin
+        java-version: '11'
+    - name: Checkout
+      uses: actions/checkout@v2.4.0
+    - name: Cache
+      uses: coursier/cache-action@v6.3
+    - name: Workflows
+      run: sbt blowoutCheck
+    - name: Code formatting
+      run: sbt scalafmtCheckAll
+    - name: Fatal warnings
+      run: sbt -Dmode=strict +Test/compile
+  test:
+    name: ✅ Unit & integration tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Java JDK
+      uses: actions/setup-java@v2.3.1
+      with:
+        distribution: temurin
+        java-version: '11'
+    - name: Checkout
+      uses: actions/checkout@v2.4.0
+    - name: Cache
+      uses: coursier/cache-action@v6.3
+    - name: Tests
+      run: sbt +test
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs:
+    - test
+    - lint
+    steps:
+    - name: Setup Java JDK
+      uses: actions/setup-java@v2.3.1
+      with:
+        distribution: temurin
+        java-version: '11'
+    - name: Checkout
+      uses: actions/checkout@v2.4.0
+    - name: Cache
+      uses: coursier/cache-action@v6.3
+    - name: Release
+      run: sbt ci-release
+      env:
+        PGP_PASSPHRASE: ${{secrets.PGP_PASSPHRASE}}
+        PGP_SECRET: ${{secrets.PGP_SECRET}}
+        SONATYPE_PASSWORD: ${{secrets.SONATYPE_PASSWORD}}
+        SONATYPE_USERNAME: ${{secrets.SONATYPE_USERNAME}}
