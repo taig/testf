@@ -1,3 +1,3 @@
 package io.taig.testf
 
-type Identity[A] = A
+type Identity[+A] = A

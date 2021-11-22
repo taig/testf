@@ -6,6 +6,13 @@ enum Result:
   case Error(message: String)
   case Failure(throwable: Throwable)
 
+  def &&(result: Result): Result = (this, result) match
+    case (Success, result) => result
+    case (Skipped, result) => result
+    case (result, Skipped) => result
+    case (result: Error, _) => result
+    case (result: Failure, _) => result
+
   def isSuccess: Boolean = this match
     case Success => true
     case _       => false
