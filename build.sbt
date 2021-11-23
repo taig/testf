@@ -1,133 +1,75 @@
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+val Version = new {
+  val Fs2 = "3.2.2"
+  val PortableScalaReflect = "1.1.1"
+  val Scala = "3.1.0"
+  val ScalajsTestInterface = "1.7.1"
+  val TestInterface = "1.0"
+}
 
-val CatsVersion = "2.1.1"
-val CatsEffectVersion = "2.1.2"
-val HedgehogVersion = "0.1.0"
-val PortableScalaReflectVersion = "1.0.0"
-val ScalajsTestInterfaceVersion = "0.6.29"
-val ScalacheckVersion = "1.14.3"
-val SilencerVersion = "1.6.0"
-val TestInterfaceVersion = "1.0"
+ThisBuild / scalaVersion := Version.Scala
 
-Global / libraryDependencies ++=
-  compilerPlugin(
-    "com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full
-  ) ::
-    ("com.github.ghik" % "silencer-lib" % SilencerVersion % "provided" cross CrossVersion.full) ::
+blowoutGenerators ++= {
+  val workflows = baseDirectory.value / ".github" / "workflows"
+
+  BlowoutYamlGenerator.strict(workflows / "main.yml", GithubActionsGenerator.main) ::
+    BlowoutYamlGenerator.strict(workflows / "branches.yml", GithubActionsGenerator.branches) ::
     Nil
-
-val coverageSettings = Def.settings(
-  coverageEnabled := {
-    if (crossProjectPlatform.value == JSPlatform) false
-    else coverageEnabled.value
-  }
-)
-
-lazy val testf = project
-  .in(file("."))
-  .settings(noPublishSettings)
-  .aggregate(
-    auto.jvm,
-    auto.js,
-    core.jvm,
-    core.js,
-    hedgehog,
-    laws.jvm,
-    laws.js,
-    runnerSbt.jvm,
-    runnerSbt.js,
-    scalacheck.jvm,
-    scalacheck.js,
-    tests.jvm,
-    tests.js
-  )
+}
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings ++ coverageSettings)
+  .in(file("modules/core"))
   .settings(
+    name := "testf-name",
     libraryDependencies ++=
-      "org.typelevel" %%% "cats-effect" % CatsEffectVersion ::
-        "org.portable-scala" %%% "portable-scala-reflect" % PortableScalaReflectVersion ::
+      ("org.portable-scala" %%% "portable-scala-reflect" % Version.PortableScalaReflect)
+        .cross(CrossVersion.for3Use2_13) ::
         Nil
   )
+
+lazy val io = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Full)
+  .in(file("modules/io"))
+  .settings(
+    name := "testf-io",
+    libraryDependencies ++=
+      "co.fs2" %%% "fs2-core" % Version.Fs2 ::
+        Nil
+  )
+  .dependsOn(core)
+
+lazy val dsl = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("modules/dsl"))
+  .settings(
+    name := "testf-dsl"
+  )
+  .dependsOn(core)
 
 lazy val runnerSbt = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .in(file("runner-sbt"))
-  .settings(sonatypePublishSettings ++ coverageSettings)
+  .in(file("modules/runner-sbt"))
   .settings(
-    name := "Runner Sbt"
+    name := "testf-runner-sbt"
   )
   .jvmSettings(
     libraryDependencies ++=
-      "org.scala-sbt" % "test-interface" % TestInterfaceVersion ::
+      "org.scala-sbt" % "test-interface" % Version.TestInterface ::
         Nil
   )
   .jsSettings(
     libraryDependencies ++=
-      "org.scala-js" %% "scalajs-test-interface" % ScalajsTestInterfaceVersion ::
+      ("org.scala-js" %% "scalajs-test-interface" % Version.ScalajsTestInterface).cross(CrossVersion.for3Use2_13) ::
         Nil
   )
   .dependsOn(core)
-
-lazy val auto = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings ++ coverageSettings)
-  .jsSettings(
-    libraryDependencies ++=
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value ::
-        Nil
-  )
-  .dependsOn(core)
-
-lazy val scalacheck = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings ++ coverageSettings)
-  .settings(
-    libraryDependencies ++=
-      "org.scalacheck" %%% "scalacheck" % ScalacheckVersion ::
-        Nil,
-    sourceGenerators in Compile += Def.task {
-      val pkg = s"${organization.value}.testf"
-      val name = "ScalacheckAssertionN"
-      val file = (sourceManaged in Compile).value / s"$name.scala"
-      IO.write(file, ScalacheckGenerator(pkg, name))
-      Seq(file)
-    }.taskValue
-  )
-  .dependsOn(core)
-
-lazy val laws = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .settings(sonatypePublishSettings ++ coverageSettings)
-  .settings(
-    libraryDependencies ++=
-      "org.typelevel" %%% "cats-laws" % CatsVersion ::
-        Nil
-  )
-  .dependsOn(scalacheck)
-
-lazy val hedgehog = project
-  .settings(sonatypePublishSettings)
-  .settings(
-    libraryDependencies ++=
-      "hedgehog" %% "hedgehog-core" % HedgehogVersion ::
-        "hedgehog" %% "hedgehog-runner" % HedgehogVersion ::
-        Nil,
-    resolvers += Resolver.url(
-      "hedgehog",
-      url("https://dl.bintray.com/hedgehogqa/scala-hedgehog")
-    )(Resolver.ivyStylePatterns)
-  )
-  .dependsOn(core.jvm)
 
 lazy val tests = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("modules/tests"))
   .settings(noPublishSettings)
   .settings(
-    testFrameworks += new TestFramework(
-      s"${organization.value}.testf.runner.TestF"
-    )
+    name := "testf-tests",
+    testFrameworks += new TestFramework("io.taig.testf.runner.TestF")
   )
-  .dependsOn(core, runnerSbt, auto, scalacheck, laws)
-  .jvmConfigure(_.dependsOn(hedgehog))
+  .dependsOn(dsl, runnerSbt, io)
