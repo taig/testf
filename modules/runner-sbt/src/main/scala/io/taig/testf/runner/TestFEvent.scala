@@ -1,11 +1,11 @@
 package io.taig.testf.runner
 
-import io.taig.testf.{Report, Result}
+import io.taig.testf.{Evaluation, Result}
 import sbt.testing.*
 
 import scala.annotation.tailrec
 
-final class TestFEvent(task: TaskDef, report: Report) extends Event:
+final class TestFEvent(task: TaskDef, report: Evaluation) extends Event:
   override def fullyQualifiedName(): String = task.fullyQualifiedName()
 
   override def fingerprint(): Fingerprint = task.fingerprint()
@@ -21,10 +21,10 @@ final class TestFEvent(task: TaskDef, report: Report) extends Event:
   override def duration(): Long = -1
 
 object TestFEvent:
-  def status(report: Report): Status = report match
-    case Report.Assertion(Result.Success)    => Status.Success
-    case Report.Assertion(Result.Skipped)    => Status.Skipped
-    case Report.Assertion(Result.Error(_))   => Status.Error
-    case Report.Assertion(Result.Failure(_)) => Status.Failure
-    case Report.Label(_, report)             => status(report)
-    case Report.Group(reports)               => reports.map(status).max
+  def status(report: Evaluation): Status = report match
+    case Evaluation.Assertion(Result.Success)    => Status.Success
+    case Evaluation.Assertion(Result.Skipped)    => Status.Skipped
+    case Evaluation.Assertion(Result.Error(_))   => Status.Error
+    case Evaluation.Assertion(Result.Failure(_)) => Status.Failure
+    case Evaluation.Label(_, report)             => status(report)
+    case Evaluation.Group(reports)               => reports.map(status).max

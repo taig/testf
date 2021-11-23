@@ -9,7 +9,8 @@ val Version = new {
 ThisBuild / scalaVersion := Version.Scala
 
 blowoutGenerators ++= {
-  val workflows = (LocalRootProject / baseDirectory).value / ".github" / "workflows"
+  val workflows = baseDirectory.value / ".github" / "workflows"
+
   BlowoutYamlGenerator.strict(workflows / "main.yml", GithubActionsGenerator.main) ::
     BlowoutYamlGenerator.strict(workflows / "branches.yml", GithubActionsGenerator.branches) ::
     Nil

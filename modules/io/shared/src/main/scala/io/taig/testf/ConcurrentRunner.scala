@@ -1,19 +1,27 @@
 package io.taig.testf
 
-import cats.effect.Concurrent
+import cats.arrow.FunctionK
+import cats.effect.{Concurrent, Temporal}
+import cats.effect.syntax.all.*
 import cats.syntax.all.*
-import fs2.Stream
+import cats.{ApplicativeThrow, Parallel, ~>}
 
-final class ConcurrentRunner[F[_]: Concurrent] extends Runner[F, F]:
-  override def run(test: Test[F]): F[Report] = test match
-    case Test.Assertion(result) => Report.Assertion(result()).pure[F]
-    case Test.AssertionF(result) =>
-      result.map(Report.Assertion.apply).handleError(throwable => Report.Assertion(Result.Failure(throwable)))
-    case Test.Group(tests, 1) => tests.traverse(run).map(Report.Group.apply)
-    case Test.Group(tests, concurrency) =>
-      Stream.emits(tests).parEvalMap(concurrency)(run).compile.toList.map(Report.Group.apply)
-    case Test.Label(name, test) => run(test).map(Report.Label(name, _))
-    case Test.Skip(test)        => Runner.skipAll(test).pure[F]
+import scala.concurrent.duration.*
+
+final class ConcurrentRunner[F[_]: ApplicativeThrow: Parallel: Temporal, G[_]](gK: G ~> F) extends Runner[F, G]:
+  override def run(spec: Spec[G]): F[Report] =
+    val evaluation = spec.test match
+      case Test.Pure(result) => Evaluation.Yield(result()).pure[F]
+      case Test.Effect(result) =>
+        gK(result).map(Evaluation.Yield.apply).handleError(throwable => Evaluation.Yield(Result.Failure(throwable)))
+      case Test.Group(specs, false) => specs.traverse(run).map(Evaluation.Group.apply)
+      case Test.Group(specs, true)  => specs.parTraverse(run).map(Evaluation.Group.apply)
+
+    spec.configuration.timeout match
+      case duration: FiniteDuration => evaluation.timeout(duration).map(Report(spec.name, _))
+      case _: Duration.Infinite => evaluation.map(Report(spec.name, _))
 
 object ConcurrentRunner:
-  def apply[F[_]: Concurrent]: Runner[F, F] = new ConcurrentRunner[F]
+  def apply[F[_]: ApplicativeThrow: Parallel: Temporal, G[_]](gK: G ~> F): Runner[F, G] = new ConcurrentRunner[F, G](gK)
+
+  def apply[F[_]: ApplicativeThrow: Parallel: Temporal]: Runner[F, F] = new ConcurrentRunner[F, F](FunctionK.id)

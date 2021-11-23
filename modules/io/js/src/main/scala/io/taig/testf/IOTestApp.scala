@@ -14,7 +14,7 @@ trait IOTestApp extends TestApp {
 
   def runner: Runner[IO, IO] = ConcurrentRunner[IO]
 
-  override def main(logger: String => Unit, callback: Option[Report] => Unit): Unit =
+  override def main(logger: String => Unit, callback: Option[Evaluation] => Unit): Unit =
     lazy val keepAlive: IO[Nothing] =
       IO.sleep(1.hour) >> keepAlive
 
